@@ -66,13 +66,13 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .link.armed{color:var(--accent)}
 
 /* board pieces */
-.wood{fill:var(--wood)}
-.woodLine{fill:none;stroke:var(--woodLine);stroke-opacity:.45}
-.hinge{fill:var(--woodDark)}
-.felt{fill:var(--felt);stroke:rgba(0,0,0,.28);stroke-width:1}
-.trayF{fill:var(--feltDeep);stroke:rgba(0,0,0,.3);stroke-width:1}
+.wood{fill:var(--frame,var(--wood))}
+.woodLine{fill:none;stroke:var(--frameLine,var(--woodLine));stroke-opacity:.45}
+.hinge{fill:var(--hinge,var(--woodDark))}
+.felt{fill:var(--field,var(--felt));stroke:rgba(0,0,0,.12);stroke-width:1}
+.trayF{fill:var(--tray,var(--feltDeep));stroke:rgba(0,0,0,.14);stroke-width:1}
 .mark{fill:var(--feltMark)}
-.pO{fill:var(--orange)} .pC{fill:var(--cream)}
+.pO{fill:var(--pB,var(--orange))} .pC{fill:var(--pA,var(--cream))}
 .shadow{fill:rgba(0,0,0,.28)}
 .cw{fill:var(--marbleW);stroke:rgba(0,0,0,.18);stroke-width:.8}
 .cb{fill:var(--marbleB);stroke:rgba(255,255,255,.08);stroke-width:.8}
@@ -89,16 +89,16 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .used{opacity:.3}
 .hlU{fill:none;stroke:var(--hlShadow);pointer-events:none}
 .hlO{fill:none;stroke:var(--hl);pointer-events:none}
-.ghostF{fill:rgba(255,212,59,.38);pointer-events:none}
+.ghostF{fill:var(--hl);fill-opacity:.38;pointer-events:none}
 .glow{fill:none;stroke:var(--hl);opacity:.35;pointer-events:none}
 .fly{pointer-events:none}
 .tgt{transition:opacity .12s;pointer-events:none}
 .dragging .tgt{opacity:.55}
 .dragging .tgt.hot{opacity:1}
 .dragging{cursor:grabbing}
-.note{fill:var(--cream);font-family:var(--display);font-style:italic;font-weight:500;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.note{fill:var(--boardText,var(--cream));font-family:var(--display);font-style:italic;font-weight:500;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .sheet[hidden]{display:none}
-.menuTxt{fill:var(--cream);font-family:var(--text);font-weight:600;letter-spacing:.2em;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.menuTxt{fill:var(--boardText,var(--cream));font-family:var(--text);font-weight:600;letter-spacing:.2em;text-anchor:middle;dominant-baseline:central;pointer-events:none}
 .cubeTxt{fill:#1B1B1B;font-family:var(--display);font-weight:500;text-anchor:middle;dominant-baseline:central;pointer-events:none;font-variant-numeric:lining-nums}
 .hit{fill:transparent;cursor:pointer}
 @keyframes breathe{50%{opacity:.4}}
@@ -222,7 +222,7 @@ h1{font-size:26px} h2{font-size:18px} .win h1{font-size:40px;letter-spacing:.3em
         <p class="eyebrow">Punteggio</p>
         <div class="score" id="score"></div>
       </div>
-      <div class="meta"><span id="meta"></span><span class="pieces">Pedine <button class="link" data-pieces="bw" type="button">Bianco e nero</button><button class="link" data-pieces="wood" type="button">Legno</button></span></div>
+      <div class="meta"><span id="meta"></span><span class="pieces">Tavolo <button class="link" data-board="club" type="button">Club</button><button class="link" data-board="corallo" type="button">Corallo</button><button class="link" data-board="riviera" type="button">Riviera</button></span></div>
       <div class="links">
         <button class="pill" id="newGame" type="button">Nuova partita</button>
         <button class="link" id="openMoves" type="button" hidden>Mosse</button>
@@ -404,8 +404,21 @@ const reduceMotion=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)
 const S={st:initialBoard(),cur:0,phase:'opening',dice:[],made:[],turnStart:null,seqs:[],maxLen:0,
   sel:null,mode:'ai',level:2,rollId:0,log:[],result:null,gen:0,busy:false,anim:null};
 const LEVELS=['','Facile','Medio','Difficile'];
-let PIECES='bw';
-try{const pc=localStorage.getItem('tavola-pieces');if(pc==='bw'||pc==='wood')PIECES=pc}catch(e){}
+/* boards: every colour, shape and ornament of a board lives here; adding a board means adding an entry */
+const BOARDS={
+  club:{name:'Club',frame:'#6F4C35',frameLine:'#8A6449',hinge:'#4E3423',field:'#2F6B34',tray:'#265A2B',pA:'#D9DCB4',pB:'#F0471F',
+    mark:'rgba(0,0,0,.13)',text:'#D9DCB4',hl:'#FFD43B',point:'tri',deco:'rhombs',bar:'hinges',
+    W:['#FFFFFD','#F3F1EC','#DFDCD5'],B:['#363635','#232322','#151515'],slabW:'#F3F1EC',slabB:'#202020'},
+  corallo:{name:'Corallo',frame:'#E4553E',frameLine:'#F27B63',hinge:'#C53F2B',field:'#F7D6BA',tray:'#F07863',pA:'#2236B4',pB:'#7FBBBC',
+    mark:'#E9492E',text:'#FFF3EA',hl:'#FFFFFF',point:'lance',deco:'diamonds',bar:'#E5435A',
+    W:['#E2EFFB','#C9DDF2','#B1CBE7'],B:['#3B58DA','#2240C2','#1832A6'],slabW:'#C9DDF2',slabB:'#2240C2'},
+  riviera:{name:'Riviera',frame:'#E6E3E0',frameLine:'#D2CECA',hinge:'#CFCBC7',field:'#D9D5D2',tray:'#CFCAC6',pA:'#FFFFFF',pB:'#E9452B',
+    mark:'#2F6FD8',text:'#8A8580',hl:'#FFC93B',point:'tri',deco:'circles',bar:'stripes',
+    W:['#FFFFFF','#F6F6F4','#E4E2DF'],B:['#6FCBF5','#33A9E6','#1F8FCC'],slabW:'#FFFFFF',slabB:'#33A9E6'}
+};
+let BOARD='club';
+try{const bb=localStorage.getItem('bgs3-board');if(BOARDS[bb])BOARD=bb}catch(e){}
+const TH=()=>BOARDS[BOARD];
 let score={ai:[0,0],two:[0,0]};
 
 const names=()=>S.mode==='ai'?['Tu','Computer']:['Bianco','Nero'];
@@ -602,7 +615,7 @@ function topXY(st,loc,p){
 function seeded(seed){let s=seed%233280;return()=>{s=(s*9301+49297)%233280;return s/233280}}
 /* a turned wooden disc: flat face, softly bevelled edge, faint lathe rings */
 function checker(cx,cy,p,seed,R=G.R,lift=0){
-  const so=R*(.14+lift*.32),sr=R*(1.26+lift*.3),k=(p?'B':'W')+PIECES;
+  const so=R*(.14+lift*.32),sr=R*(1.26+lift*.3),k=p?'B':'W';
   return `<circle fill="url(#sh)" cx="${cx+so*.6}" cy="${cy+so}" r="${sr}"/>`+
     `<circle fill="url(#face${k})" cx="${cx}" cy="${cy}" r="${R-.3}"/>`+
 ''; 
@@ -623,13 +636,9 @@ function die(x,y,sz,v,p){
   if(v)for(const [a,b] of PIPS[v])h+=`<circle class="${p?'pipB':'pipW'}" cx="${cx+a*o}" cy="${cy+b*o}" r="${r}"/>`;
   return `<g filter="url(#ds)">${h}</g>`;
 }
-const DEFS=`<defs><radialGradient id="sh"><stop offset="40%" stop-color="#000" stop-opacity=".32"/><stop offset="70%" stop-color="#000" stop-opacity=".12"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>
-<radialGradient id="faceWwood" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="#F1DFBF"/><stop offset="70%" stop-color="#E6CDA3"/><stop offset="100%" stop-color="#D6B98C"/></radialGradient>
-<radialGradient id="faceBwood" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="#5A372A"/><stop offset="70%" stop-color="#4A2B20"/><stop offset="100%" stop-color="#3A2118"/></radialGradient>
-<radialGradient id="faceWbw" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="#FFFFFD"/><stop offset="70%" stop-color="#F3F1EC"/><stop offset="100%" stop-color="#DFDCD5"/></radialGradient>
-<radialGradient id="faceBbw" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="#363635"/><stop offset="70%" stop-color="#232322"/><stop offset="100%" stop-color="#151515"/></radialGradient>
+const grad=(id,c)=>`<radialGradient id="${id}" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="${c[0]}"/><stop offset="70%" stop-color="${c[1]}"/><stop offset="100%" stop-color="${c[2]}"/></radialGradient>`;
+const DEFS=()=>`<defs><radialGradient id="sh"><stop offset="40%" stop-color="#000" stop-opacity=".32"/><stop offset="70%" stop-color="#000" stop-opacity=".12"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>${grad('faceW',TH().W)}${grad('faceB',TH().B)}
 <filter id="ds" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0.6" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".38"/></filter></defs>`;
-
 function render(){
   if(!G)layout();
   const s=S.st,{r,pw,b,t,F,pl,band,R,L,Sh,barX,trayX,midY,trayH}=G;
@@ -648,8 +657,15 @@ function render(){
   h+=`<rect class="woodLine" x="${r*.45}" y="${r*.45}" width="${L-r*.9}" height="${Sh-r*.9}" rx="${r*.3}"/>`;
   h+=`<rect class="felt" x="${G.x0}" y="${r}" width="${6*pw}" height="${F}"/>`;
   h+=`<rect class="felt" x="${barX+b}" y="${r}" width="${6*pw}" height="${F}"/>`;
-  h+=`<line class="woodLine" x1="${barX+b/2}" y1="${r*.4}" x2="${barX+b/2}" y2="${Sh-r*.4}" stroke-width=".8"/>`;
-  for(const f of [.2,.8])h+=`<rect class="hinge" x="${barX+b*.3}" y="${Sh*f-r*.35}" width="${b*.4}" height="${r*.7}" rx="${r*.2}"/>`;
+  const th=TH();
+  /* the spine between the two halves */
+  if(th.bar==='hinges'){
+    h+=`<line class="woodLine" x1="${barX+b/2}" y1="${r*.4}" x2="${barX+b/2}" y2="${Sh-r*.4}" stroke-width=".8"/>`;
+    for(const f of [.2,.8])h+=`<rect class="hinge" x="${barX+b*.3}" y="${Sh*f-r*.35}" width="${b*.4}" height="${r*.7}" rx="${r*.2}"/>`;
+  }else if(th.bar==='stripes'){
+    h+=`<rect x="${barX}" y="${r}" width="${b}" height="${F}" fill="#FFFFFF"/>`;
+    const st=Math.max(4,r*.62);for(let y=r;y<Sh-r;y+=st*2)h+=`<rect x="${barX}" y="${y}" width="${b}" height="${Math.min(st,Sh-r-y)}" fill="${th.mark}"/>`;
+  }else h+=`<rect x="${barX}" y="0" width="${b}" height="${Sh}" fill="${th.bar}"/><rect x="${barX}" y="0" width="${b}" height="${Sh}" fill="url(#spine)" opacity=".0"/>`;
   /* two identical trays, one in each half of the case; only the right one takes checkers borne off */
   const sq=G.sq,upright=(x,y)=>G.port?` transform="rotate(-90 ${x} ${y})"`:'';
   for(const tx of [G.trayLX,trayX])h+=`<rect class="trayF" x="${tx}" y="${r}" width="${t}" height="${trayH}"/><rect class="trayF" x="${tx}" y="${midY-sq/2}" width="${t}" height="${sq}"/><rect class="trayF" x="${tx}" y="${G.botY}" width="${t}" height="${trayH}"/>`;
@@ -657,13 +673,21 @@ function render(){
   {const cx=trayX+t/2,fs=Math.max(7,t*.165);h+=`<text class="menuTxt" x="${cx+fs*.1}" y="${midY}" font-size="${fs.toFixed(1)}"${upright(cx,midY)}>MENU</text>`}
   {const cs=Math.min(band*1.15,pw*.8),cx=G.trayLX+t/2;h+=`<rect class="cAnchor" x="${cx-cs/2}" y="${midY-cs/2}" width="${cs}" height="${cs}" fill="none"/>`}
 
+  /* ornaments on the field, under the points */
+  if(th.deco==='diamonds')for(let c=0;c<12;c++){const cx=colX(c)+pw/2,hw=pw*.5,hh=pl*.42;h+=`<path fill="${th.mark}" d="M${cx} ${midY-hh}L${cx+hw} ${midY}L${cx} ${midY+hh}L${cx-hw} ${midY}Z"/>`}
   /* points and the felt's centre motif */
   for(let i=0;i<24;i++){
     const {top,x,cx}=ptGeom(i),base=top?r:Sh-r,tip=top?r+pl+band*.08:Sh-r-pl-band*.08;
-    h+=`<path class="${i%2?'pO':'pC'}" d="M${x} ${base}L${x+pw} ${base}L${cx} ${tip}Z"/>`;
-    if(top){const m=Math.max(1.4,pw*.05);for(const [dx,dy] of [[0,-1],[-1,0],[1,0],[0,1]])h+=`<rect class="mark" x="${cx+dx*m*2.2-m}" y="${midY+dy*m*2.2-m}" width="${m*2}" height="${m*2}" transform="rotate(45 ${cx+dx*m*2.2} ${midY+dy*m*2.2})"/>`}
+    if(th.point==='lance'){
+      /* long blades with a rounded foot, as on the coral board */
+      const x1=x+pw*.1,x2=x+pw*.9,rad=(x2-x1)/2,fy=top?base+rad:base-rad;
+      h+=`<path class="${i%2?'pO':'pC'}" d="M${cx} ${tip}L${x1} ${fy}A${rad} ${rad} 0 0 ${top?1:0} ${x2} ${fy}Z"/>`;
+    }else h+=`<path class="${i%2?'pO':'pC'}" d="M${x} ${base}L${x+pw} ${base}L${cx} ${tip}Z"/>`;
+    if(top&&th.deco==='rhombs'){const m=Math.max(1.4,pw*.05);for(const [dx,dy] of [[0,-1],[-1,0],[1,0],[0,1]])h+=`<rect class="mark" x="${cx+dx*m*2.2-m}" y="${midY+dy*m*2.2-m}" width="${m*2}" height="${m*2}" transform="rotate(45 ${cx+dx*m*2.2} ${midY+dy*m*2.2})"/>`}
   }
 
+  /* the riviera's two discs sit on top of the point tips, as printed on the board */
+  if(th.deco==='circles'){const cr=Math.min(pw*1.05,F*.2);h+=`<circle cx="${G.x0+3*pw}" cy="${midY}" r="${cr}" fill="#FFFFFF"/><circle cx="${barX+b+3*pw}" cy="${midY}" r="${cr}" fill="${th.mark}"/>`}
   /* checkers; the selected one is lifted */
   const wSel=Math.max(3,R*.17),wCan=Math.max(1.8,R*.09),wDst=Math.max(2.4,R*.12);
   let selDraw='';
@@ -689,7 +713,7 @@ function render(){
   }
   for(const p of [0,1]){
     const n=s.off[p],show=hidden('off',p)?n-1:n;
-    for(let k=0;k<show;k++)h+=`<rect class="${p?'slabB':'slabW'}${PIECES}" x="${trayX+t*.12}" y="${slabY(p,k)}" width="${t*.76}" height="${G.slabH}" rx="${G.slabH*.35}"/>`;
+    for(let k=0;k<show;k++)h+=`<rect fill="${p?TH().slabB:TH().slabW}" stroke="rgba(0,0,0,.14)" stroke-width=".6" x="${trayX+t*.12}" y="${slabY(p,k)}" width="${t*.76}" height="${G.slabH}" rx="${G.slabH*.35}"/>`;
   }
   /* legal destinations: each die and the dice added together */
   for(const to of tgMap.keys()){
@@ -759,7 +783,8 @@ function render(){
   }
   /* the checker held under the finger */
   if(S.drag){const RR=S.drag.loc==='bar'?G.bR:R;h+=`<g id="dragG" class="fly" transform="translate(${S.drag.x} ${S.drag.y}) scale(1.08)">${checker(0,0,S.cur,5,RR,1)}</g>`}
-  const body=DEFS+h;
+  const body=DEFS()+h;
+  {const st=$('board').style;st.setProperty('--frame',th.frame);st.setProperty('--frameLine',th.frameLine);st.setProperty('--hinge',th.hinge);st.setProperty('--field',th.field);st.setProperty('--tray',th.tray);st.setProperty('--pA',th.pA);st.setProperty('--pB',th.pB);st.setProperty('--markC',th.mark);st.setProperty('--boardText',th.text);st.setProperty('--hl',th.hl)}
   $('board').innerHTML=`<g id="root"${G.port?` transform="translate(${Sh} 0) rotate(90)"`:''}>${body}</g>`;
   syncDice(specs);syncCube();
 }
@@ -965,7 +990,7 @@ function renderSheet(){
   document.querySelectorAll('[data-level]').forEach(b=>{const on=+b.dataset.level===S.level;b.setAttribute('aria-current',String(on));b.classList.toggle('ghost',!on)});
   $('pickAi').classList.toggle('ghost',S.mode!=='ai');$('pickTwo').classList.toggle('ghost',S.mode!=='two');
   $('openMoves').hidden=S.phase!=='over';
-  document.querySelectorAll('[data-pieces]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.pieces===PIECES)));
+  document.querySelectorAll('[data-board]').forEach(b=>b.setAttribute('aria-current',String(b.dataset.board===BOARD)));
 }
 function showView(v){
   for(const [id,k] of [['vMenu','menu'],['vMode','mode'],['vLevel','level'],['vMoves','moves'],['vRules','rules']])$(id).hidden=k!==v;
@@ -1042,7 +1067,7 @@ $('openMoves').addEventListener('click',()=>showView('moves'));
 $('openRules').addEventListener('click',()=>showView('rules'));
 $('newGame').addEventListener('click',()=>showView('mode'));
 $('pickAi').addEventListener('click',()=>showView('level'));
-document.querySelectorAll('[data-pieces]').forEach(b=>b.addEventListener('click',()=>{PIECES=b.dataset.pieces;try{localStorage.setItem('tavola-pieces',PIECES)}catch(e){}renderSheet();if(!S.busy)render()}));
+document.querySelectorAll('[data-board]').forEach(b=>b.addEventListener('click',()=>{BOARD=b.dataset.board;try{localStorage.setItem('bgs3-board',BOARD)}catch(e){}renderSheet();if(!S.busy)render()}));
 $('pickTwo').addEventListener('click',()=>startNew('two'));
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>startNew('ai',+b.dataset.level)));
 $('winScore').addEventListener('click',()=>{closeWin();openSheet('menu')});
