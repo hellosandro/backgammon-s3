@@ -13,4 +13,4 @@ Open `index.html` in a browser, or visit the Vercel deployment. Best on a phone 
 
 ## Structure
 
-A single self-contained `index.html`: no build step, no dependencies besides Google Fonts (Bodoni Moda, Instrument Sans).
+A single self-contained `index.html`: no build step, no dependencies besides Google Fonts (Afacad).
