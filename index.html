@@ -636,9 +636,15 @@ function die(x,y,sz,v,p){
   if(v)for(const [a,b] of PIPS[v])h+=`<circle class="${p?'pipB':'pipW'}" cx="${cx+a*o}" cy="${cy+b*o}" r="${r}"/>`;
   return `<g filter="url(#ds)">${h}</g>`;
 }
+function shade(hex){
+  const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
+  const m=(r+g+b)/3;r=r+(r-m)*.35;g=g+(g-m)*.35;b=b+(b-m)*.35;
+  const k=.55;const f=v=>Math.max(0,Math.min(255,Math.round(v*k)));
+  return `rgb(${f(r)},${f(g)},${f(b)})`;
+}
 const grad=(id,c)=>`<radialGradient id="${id}" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="${c[0]}"/><stop offset="70%" stop-color="${c[1]}"/><stop offset="100%" stop-color="${c[2]}"/></radialGradient>`;
 const DEFS=()=>`<defs><radialGradient id="sh"><stop offset="40%" stop-color="#000" stop-opacity=".32"/><stop offset="70%" stop-color="#000" stop-opacity=".12"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>${grad('faceW',TH().W)}${grad('faceB',TH().B)}
-<filter id="occ" x="-25%" y="-25%" width="150%" height="150%"><feFlood flood-color="#000"/><feComposite in2="SourceAlpha" operator="out"/><feGaussianBlur stdDeviation="${(G.r*.42).toFixed(1)}"/><feOffset dx="${(G.r*.12).toFixed(1)}" dy="${(G.r*.22).toFixed(1)}"/><feComposite in2="SourceAlpha" operator="in"/><feComponentTransfer><feFuncA type="linear" slope="${TH().occ??.55}"/></feComponentTransfer></filter>
+<filter id="occ" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feFlood flood-color="${shade(TH().frame)}"/><feComposite in2="SourceAlpha" operator="out" result="wall"/><feGaussianBlur in="wall" stdDeviation="${(G.r*.4).toFixed(1)}"/><feOffset dx="${(G.r*.1).toFixed(1)}" dy="${(G.r*.2).toFixed(1)}"/><feComponentTransfer result="near"><feFuncA type="linear" slope=".5"/></feComponentTransfer><feGaussianBlur in="wall" stdDeviation="${(G.r*1.7).toFixed(1)}"/><feOffset dx="${(G.r*.3).toFixed(1)}" dy="${(G.r*.55).toFixed(1)}"/><feComponentTransfer result="far"><feFuncA type="linear" slope=".42"/></feComponentTransfer><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge><feComposite in2="SourceAlpha" operator="in"/></filter>
 <filter id="ds" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0.6" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".38"/></filter></defs>`;
 function render(){
   if(!G)layout();
