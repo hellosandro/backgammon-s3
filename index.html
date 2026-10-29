@@ -616,7 +616,7 @@ function seeded(seed){let s=seed%233280;return()=>{s=(s*9301+49297)%233280;retur
 /* a turned wooden disc: flat face, softly bevelled edge, faint lathe rings */
 function checker(cx,cy,p,seed,R=G.R,lift=0){
   const so=R*(.14+lift*.32),sr=R*(1.26+lift*.3),k=p?'B':'W';
-  return `<circle fill="url(#sh)" cx="${cx+so*.6}" cy="${cy+so}" r="${sr}"/>`+
+  return `<circle fill="url(#sh)" style="mix-blend-mode:multiply" cx="${cx+so*.6}" cy="${cy+so}" r="${sr}"/>`+
     `<circle fill="url(#face${k})" cx="${cx}" cy="${cy}" r="${R-.3}"/>`+
 ''; 
 }
@@ -636,15 +636,15 @@ function die(x,y,sz,v,p){
   if(v)for(const [a,b] of PIPS[v])h+=`<circle class="${p?'pipB':'pipW'}" cx="${cx+a*o}" cy="${cy+b*o}" r="${r}"/>`;
   return `<g filter="url(#ds)">${h}</g>`;
 }
-function shade(hex){
+function shade(hex,k=.55,sat=.35){
   const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
-  const m=(r+g+b)/3;r=r+(r-m)*.35;g=g+(g-m)*.35;b=b+(b-m)*.35;
-  const k=.55;const f=v=>Math.max(0,Math.min(255,Math.round(v*k)));
+  const m=(r+g+b)/3;r=r+(r-m)*sat;g=g+(g-m)*sat;b=b+(b-m)*sat;
+ const f=v=>Math.max(0,Math.min(255,Math.round(v*k)));
   return `rgb(${f(r)},${f(g)},${f(b)})`;
 }
 const grad=(id,c)=>`<radialGradient id="${id}" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="${c[0]}"/><stop offset="70%" stop-color="${c[1]}"/><stop offset="100%" stop-color="${c[2]}"/></radialGradient>`;
-const DEFS=()=>`<defs><radialGradient id="sh"><stop offset="40%" stop-color="#000" stop-opacity=".32"/><stop offset="70%" stop-color="#000" stop-opacity=".12"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>${grad('faceW',TH().W)}${grad('faceB',TH().B)}
-<filter id="occ" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feFlood flood-color="${shade(TH().frame)}"/><feComposite in2="SourceAlpha" operator="out" result="wall"/><feGaussianBlur in="wall" stdDeviation="${(G.r*.4).toFixed(1)}"/><feOffset dx="${(G.r*.1).toFixed(1)}" dy="${(G.r*.2).toFixed(1)}"/><feComponentTransfer result="near"><feFuncA type="linear" slope=".5"/></feComponentTransfer><feGaussianBlur in="wall" stdDeviation="${(G.r*1.7).toFixed(1)}"/><feOffset dx="${(G.r*.3).toFixed(1)}" dy="${(G.r*.55).toFixed(1)}"/><feComponentTransfer result="far"><feFuncA type="linear" slope=".42"/></feComponentTransfer><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge><feComposite in2="SourceAlpha" operator="in"/></filter>
+const DEFS=()=>`<defs><radialGradient id="sh"><stop offset="40%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity=".55"/><stop offset="70%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity=".2"/><stop offset="100%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity="0"/></radialGradient>${grad('faceW',TH().W)}${grad('faceB',TH().B)}
+<filter id="occ" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feFlood flood-color="${shade(TH().frame,.72,.5)}"/><feComposite in2="SourceAlpha" operator="out" result="wall"/><feGaussianBlur in="wall" stdDeviation="${(G.r*.4).toFixed(1)}"/><feOffset dx="${(G.r*.1).toFixed(1)}" dy="${(G.r*.2).toFixed(1)}"/><feComponentTransfer result="near"><feFuncA type="linear" slope=".85"/></feComponentTransfer><feGaussianBlur in="wall" stdDeviation="${(G.r*1.7).toFixed(1)}"/><feOffset dx="${(G.r*.3).toFixed(1)}" dy="${(G.r*.55).toFixed(1)}"/><feComponentTransfer result="far"><feFuncA type="linear" slope=".7"/></feComponentTransfer><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge><feComposite in2="SourceAlpha" operator="in"/></filter>
 <filter id="ds" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0.6" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".38"/></filter></defs>`;
 function render(){
   if(!G)layout();
@@ -697,7 +697,7 @@ function render(){
   /* the riviera's two discs sit on top of the point tips, as printed on the board */
   if(th.deco==='circles'){const cr=Math.min(pw*1.05,F*.2);h+=`<circle cx="${G.x0+3*pw}" cy="${midY}" r="${cr}" fill="#FFFFFF"/><circle cx="${barX+b+3*pw}" cy="${midY}" r="${cr}" fill="${th.mark}"/>`}
   /* soft occlusion where the field and the trays meet their walls */
-  {const occ=(x,y,w,hh)=>`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="#000" filter="url(#occ)"/>`;
+  {const occ=(x,y,w,hh)=>`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="#000" filter="url(#occ)" style="mix-blend-mode:multiply"/>`;
    h+=occ(G.x0,r,6*pw,F)+occ(barX+b,r,6*pw,F);
    for(const tx of [G.trayLX,trayX])h+=occ(tx,r,t,trayH)+occ(tx,midY-G.sq/2,t,G.sq)+occ(tx,G.botY,t,trayH);}
   /* checkers; the selected one is lifted */
