@@ -619,7 +619,7 @@ function checker(cx,cy,p,seed,R=G.R,lift=0){
   return `<circle fill="url(#sh)" style="mix-blend-mode:multiply" cx="${cx+so*.6}" cy="${cy+so}" r="${sr}"/>`+
     /* a flat disc: one solid colour, with only a soft chamfer catching the light at the rim */
     `<circle fill="${TH()[k][1]}" cx="${cx}" cy="${cy}" r="${R-.3}"/>`+
-    `<circle fill="none" stroke="url(#bevel)" stroke-width="${(R*.13).toFixed(2)}" cx="${cx}" cy="${cy}" r="${(R-.3-R*.065).toFixed(2)}"/>`+
+    `<circle fill="none" stroke="url(#bevel)" stroke-width="${(R*.06).toFixed(2)}" cx="${cx}" cy="${cy}" r="${(R-.3-R*.03).toFixed(2)}"/>`+
 ''; 
 }
 function ring(cx,cy,rad,w,dash,op=1){
@@ -645,7 +645,7 @@ function shade(hex,k=.55,sat=.35){
   return `rgb(${f(r)},${f(g)},${f(b)})`;
 }
 const grad=(id,c)=>`<radialGradient id="${id}" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="${c[0]}"/><stop offset="70%" stop-color="${c[1]}"/><stop offset="100%" stop-color="${c[2]}"/></radialGradient>`;
-const DEFS=()=>`<defs><radialGradient id="sh"><stop offset="40%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity=".55"/><stop offset="70%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity=".2"/><stop offset="100%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity="0"/></radialGradient><linearGradient id="bevel" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFFFFF" stop-opacity=".5"/><stop offset="45%" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="60%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity=".2"/></linearGradient>
+const DEFS=()=>`<defs><radialGradient id="sh"><stop offset="40%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity=".55"/><stop offset="70%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity=".2"/><stop offset="100%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity="0"/></radialGradient><linearGradient id="bevel" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFFFFF" stop-opacity=".32"/><stop offset="40%" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="65%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity=".1"/></linearGradient>
 <filter id="occ" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feFlood flood-color="${shade(TH().frame,.72,.5)}"/><feComposite in2="SourceAlpha" operator="out" result="wall"/><feGaussianBlur in="wall" stdDeviation="${(G.r*.4).toFixed(1)}"/><feOffset dx="${(G.r*.1).toFixed(1)}" dy="${(G.r*.2).toFixed(1)}"/><feComponentTransfer result="near"><feFuncA type="linear" slope=".68"/></feComponentTransfer><feGaussianBlur in="wall" stdDeviation="${(G.r*1.7).toFixed(1)}"/><feOffset dx="${(G.r*.3).toFixed(1)}" dy="${(G.r*.55).toFixed(1)}"/><feComponentTransfer result="far"><feFuncA type="linear" slope=".55"/></feComponentTransfer><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge><feComposite in2="SourceAlpha" operator="in"/></filter>
 <filter id="ds" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0.6" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".38"/></filter></defs>`;
 function render(){
