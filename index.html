@@ -409,7 +409,7 @@ const BOARDS={
   club:{name:'Club',frame:'#6F4C35',frameLine:'#8A6449',hinge:'#4E3423',field:'#2F6B34',tray:'#265A2B',pA:'#D9DCB4',pB:'#F0471F',
     mark:'rgba(0,0,0,.13)',text:'#D9DCB4',hl:'#FFD43B',point:'tri',deco:'rhombs',bar:'hinges',
     W:['#FFFFFD','#F3F1EC','#DFDCD5'],B:['#363635','#232322','#151515'],slabW:'#F3F1EC',slabB:'#202020'},
-  corallo:{name:'Corallo',frame:'#E4553E',frameLine:'#F27B63',hinge:'#C53F2B',field:'#F7D6BA',tray:'#F07863',pA:'#2236B4',pB:'#7FBBBC',
+  corallo:{name:'Corallo',frame:'#E4553E',frameLine:'#F27B63',hinge:'#C53F2B',field:'#F7D6BA',tray:'#F07863',pA:'#7FBBBC',pB:'#2236B4',
     mark:'#E9492E',text:'#FFF3EA',hl:'#FFFFFF',point:'lance',deco:'diamonds',bar:'#E5435A',
     W:['#E2EFFB','#C9DDF2','#B1CBE7'],B:['#3B58DA','#2240C2','#1832A6'],slabW:'#C9DDF2',slabB:'#2240C2'},
   riviera:{name:'Riviera',frame:'#E6E3E0',frameLine:'#D2CECA',hinge:'#CFCBC7',field:'#D9D5D2',tray:'#CFCAC6',pA:'#FFFFFF',pB:'#E9452B',
@@ -638,6 +638,7 @@ function die(x,y,sz,v,p){
 }
 const grad=(id,c)=>`<radialGradient id="${id}" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="${c[0]}"/><stop offset="70%" stop-color="${c[1]}"/><stop offset="100%" stop-color="${c[2]}"/></radialGradient>`;
 const DEFS=()=>`<defs><radialGradient id="sh"><stop offset="40%" stop-color="#000" stop-opacity=".32"/><stop offset="70%" stop-color="#000" stop-opacity=".12"/><stop offset="100%" stop-color="#000" stop-opacity="0"/></radialGradient>${grad('faceW',TH().W)}${grad('faceB',TH().B)}
+<filter id="occ" x="-25%" y="-25%" width="150%" height="150%"><feFlood flood-color="#000"/><feComposite in2="SourceAlpha" operator="out"/><feGaussianBlur stdDeviation="${(G.r*.42).toFixed(1)}"/><feOffset dx="${(G.r*.12).toFixed(1)}" dy="${(G.r*.22).toFixed(1)}"/><feComposite in2="SourceAlpha" operator="in"/><feComponentTransfer><feFuncA type="linear" slope="${TH().occ??.55}"/></feComponentTransfer></filter>
 <filter id="ds" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0.6" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".38"/></filter></defs>`;
 function render(){
   if(!G)layout();
@@ -674,7 +675,8 @@ function render(){
   {const cs=Math.min(band*1.15,pw*.8),cx=G.trayLX+t/2;h+=`<rect class="cAnchor" x="${cx-cs/2}" y="${midY-cs/2}" width="${cs}" height="${cs}" fill="none"/>`}
 
   /* ornaments on the field, under the points */
-  if(th.deco==='diamonds')for(let c=0;c<12;c++){const cx=colX(c)+pw/2,hw=pw*.5,hh=pl*.42;h+=`<path fill="${th.mark}" d="M${cx} ${midY-hh}L${cx+hw} ${midY}L${cx} ${midY+hh}L${cx-hw} ${midY}Z"/>`}
+  /* four small diamonds on the centre line, under the second and fifth point of each half */
+  if(th.deco==='diamonds')for(const c of [1,4,7,10]){const cx=colX(c)+pw/2,hw=pw*.42,hh=F*.085;h+=`<path fill="${th.mark}" d="M${cx} ${midY-hh}L${cx+hw} ${midY}L${cx} ${midY+hh}L${cx-hw} ${midY}Z"/>`}
   /* points and the felt's centre motif */
   for(let i=0;i<24;i++){
     const {top,x,cx}=ptGeom(i),base=top?r:Sh-r,tip=top?r+pl+band*.08:Sh-r-pl-band*.08;
@@ -688,6 +690,10 @@ function render(){
 
   /* the riviera's two discs sit on top of the point tips, as printed on the board */
   if(th.deco==='circles'){const cr=Math.min(pw*1.05,F*.2);h+=`<circle cx="${G.x0+3*pw}" cy="${midY}" r="${cr}" fill="#FFFFFF"/><circle cx="${barX+b+3*pw}" cy="${midY}" r="${cr}" fill="${th.mark}"/>`}
+  /* soft occlusion where the field and the trays meet their walls */
+  {const occ=(x,y,w,hh)=>`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="#000" filter="url(#occ)"/>`;
+   h+=occ(G.x0,r,6*pw,F)+occ(barX+b,r,6*pw,F);
+   for(const tx of [G.trayLX,trayX])h+=occ(tx,r,t,trayH)+occ(tx,midY-G.sq/2,t,G.sq)+occ(tx,G.botY,t,trayH);}
   /* checkers; the selected one is lifted */
   const wSel=Math.max(3,R*.17),wCan=Math.max(1.8,R*.09),wDst=Math.max(2.4,R*.12);
   let selDraw='';
