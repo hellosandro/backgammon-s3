@@ -624,7 +624,7 @@ function checker(cx,cy,p,seed,R=G.R,lift=0){
 }
 function ring(cx,cy,rad,w,dash,op=1){
   const da=dash?` stroke-dasharray="${(rad*.42).toFixed(1)} ${(rad*.3).toFixed(1)}"`:'';
-  return `<g opacity="${op}"><circle class="hlU" cx="${cx}" cy="${cy}" r="${rad}" stroke-width="${w+2.4}"${da}/><circle class="hlO" cx="${cx}" cy="${cy}" r="${rad}" stroke-width="${w}"${da}/></g>`;
+  return `<g opacity="${op}"><circle class="hlO" cx="${cx}" cy="${cy}" r="${rad}" stroke-width="${w}"${da}/></g>`;
 }
 function rectRing(x,y,w,h,rx,dash,sw){
   sw=sw||Math.max(2,G.R*.11);const da=dash?` stroke-dasharray="${G.R*.5} ${G.R*.35}"`:'';
@@ -711,7 +711,7 @@ function render(){
     let n=Math.abs(v);const show=hidden(i,p)?n-1:n;
     for(let k=0;k<show;k++){
       const cy=stackY(top,k,n),isSel=interactive&&S.sel===i&&k===n-1;
-      if(isSel)selDraw=`<circle class="glow" cx="${cx}" cy="${cy}" r="${R*1.32}" stroke-width="${R*.22}"/>`+checker(cx,cy,p,i*97+k*13+p*7+3,R*1.07,1)+ring(cx,cy,R*1.24,wSel,false);
+      if(isSel)selDraw=checker(cx,cy,p,i*97+k*13+p*7+3,R*1.07,1)+ring(cx,cy,R*1.24,wSel,false);
       else h+=checker(cx,cy,p,i*97+k*13+p*7+3);
     }
     if(interactive&&S.sel===null&&fr.has(i))h+=ring(cx,stackY(top,n-1,n),R*1.18,wCan,false,.85);
