@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#E9E9E6">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Backgammon S3">
@@ -36,9 +37,10 @@ img{max-width:100%}
   :root:not([data-theme="light"]){--bg:#121211;--sheet:#1C1C1A;--ink:#ECEBE6;--muted:#93938C;--line:#3A3A36;--accent:#FF6B47;color-scheme:dark}
 }
 :root[data-theme="dark"]{--bg:#121211;--sheet:#1C1C1A;--ink:#ECEBE6;--muted:#93938C;--line:#3A3A36;--accent:#FF6B47;color-scheme:dark}
-html,body{height:100%;background:var(--bg)}
+html,body{height:100%;background:#000}
 body{color:var(--ink);font:400 13px/1.45 var(--text);overflow:hidden;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  /* the same margin on both sides, wide enough for the notch, so the board stays centred whichever way the phone is turned */
+  --side:max(16px,env(safe-area-inset-left,0px),env(safe-area-inset-right,0px));padding-left:var(--side);padding-right:var(--side);
   -webkit-user-select:none;user-select:none}
 .app{height:100%;padding-block:10px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;position:relative}
 /* 3D dice */
@@ -105,11 +107,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wait{animation:breathe 1.8s ease-in-out infinite}
 
 /* menu sheet and win modal */
-.sheet,.win{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+.sheet,.win{position:fixed;inset:0;background:rgba(0,0,0,.74);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  --ink:#F2F0EA;--muted:rgba(242,240,234,.58);--line:rgba(242,240,234,.22);--sheet:#000;--accent:#FF8A66;color:var(--ink);color-scheme:dark;
   display:flex;align-items:center;justify-content:center;z-index:20;padding-block:12px;box-sizing:border-box;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .sheet[hidden],.win[hidden],.view[hidden]{display:none}
-.card{background:var(--sheet);border:1px solid var(--line);border-radius:3px;padding:22px 26px;width:min(380px,100%);max-height:100%;overflow:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
+.card{background:transparent;border:0;padding:22px 26px;width:min(380px,100%);max-height:100%;overflow:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
 .card.wide{width:min(560px,100%)}
 .view{display:flex;flex-direction:column;gap:18px}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
@@ -144,7 +147,9 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .win .card{text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px;padding-block:30px 22px}
 .win h1{font-size:44px}
 .win .row{display:flex;gap:24px}
+.win .tally{font:500 40px/1 var(--display);letter-spacing:.3em;margin:0 -.3em 0 0;font-variant-numeric:tabular-nums lining-nums}
 @media (orientation: landscape) and (max-height: 520px){
+  .app{padding-block:22px 14px}
   .card{width:min(620px,100%)}
   #vMenu:not([hidden]){display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:34px;row-gap:16px;align-items:start}
   #vMenu>.links{grid-column:2;grid-row:1/span 3;border-top:0;border-left:1px solid var(--line);padding:4px 0 0 24px;align-self:stretch}
@@ -203,10 +208,9 @@ h1{font-size:26px} h2{font-size:18px} .win h1{font-size:40px;letter-spacing:.3em
 <div class="win" id="win" hidden>
   <div class="card" role="dialog" aria-labelledby="winTitle">
     <h1 id="winTitle">Hai vinto</h1>
+    <p class="tally" id="winTally"></p>
     <div class="row">
-      <button class="link" id="winScore" type="button">Punteggio</button>
-      <button class="link" id="winMoves" type="button">Mosse</button>
-      <button class="link" id="winRules" type="button">Come si gioca</button>
+      <button class="link" id="winNew" type="button">Nuova partita</button>
     </div>
   </div>
 </div>
@@ -1025,6 +1029,7 @@ function openWin(){
   const r=S.result;if(!r)return;
   const n=names();
   $('winTitle').textContent=S.mode==='ai'?(r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`;
+  const sc=score[S.mode];$('winTally').textContent=`${sc[0]}–${sc[1]}`;
   $('win').hidden=false;
 }
 function closeWin(){$('win').hidden=true}
@@ -1092,9 +1097,7 @@ $('pickAi').addEventListener('click',()=>showView('level'));
 document.querySelectorAll('[data-board]').forEach(b=>b.addEventListener('click',()=>{BOARD=b.dataset.board;try{localStorage.setItem('bgs3-board',BOARD)}catch(e){}renderSheet();if(!S.busy)render()}));
 $('pickTwo').addEventListener('click',()=>startNew('two'));
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>startNew('ai',+b.dataset.level)));
-$('winScore').addEventListener('click',()=>{closeWin();openSheet('menu')});
-$('winRules').addEventListener('click',()=>{closeWin();openSheet('rules')});
-$('winMoves').addEventListener('click',()=>{closeWin();openSheet('moves')});
+$('winNew').addEventListener('click',()=>{closeWin();openSheet('mode')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheet();closeWin()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lock===null&&S.phase!=='opening')keepAwake()});
 
