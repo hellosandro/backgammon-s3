@@ -109,7 +109,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* menu sheet and win modal */
 .sheet,.win{position:fixed;inset:0;background:rgba(0,0,0,.74);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   --ink:#F2F0EA;--muted:rgba(242,240,234,.58);--line:rgba(242,240,234,.22);--sheet:#000;--accent:#FF8A66;color:var(--ink);color-scheme:dark;
-  display:flex;align-items:center;justify-content:center;z-index:20;padding-block:12px;box-sizing:border-box;
+  display:flex;align-items:center;justify-content:center;z-index:20;box-sizing:border-box;
+  padding-top:calc(max(8px,env(safe-area-inset-top,0px)) + 56px);padding-bottom:max(12px,env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .sheet[hidden],.win[hidden],.view[hidden]{display:none}
 .card{background:transparent;border:0;padding:22px 26px;width:min(380px,100%);max-height:100%;overflow:auto;box-sizing:border-box;-webkit-user-select:text;user-select:text}
@@ -160,8 +161,10 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .top{justify-content:center}
 .top>.link{position:absolute;right:14px;top:10px;font-size:11px}
 /* close and back: drawn icons, a generous tap area around them */
-.top>.x,.top>.back{top:4px;right:4px;min-width:48px;min-height:48px;padding:0;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--ink)}
-.top>.back{right:auto;left:4px}
+.top>.x,.top>.back{position:fixed;top:max(8px,env(safe-area-inset-top,0px));right:max(8px,env(safe-area-inset-right,0px));min-width:48px;min-height:48px;padding:0;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--ink)}
+.top>.back{right:auto;left:max(8px,env(safe-area-inset-left,0px))}
+/* every screen's title sits in the same place, on the line of the close and back icons */
+.top h2{position:fixed;left:0;right:0;top:max(8px,env(safe-area-inset-top,0px));line-height:48px;text-align:center;pointer-events:none}
 .top>.x svg,.top>.back svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 #vMenu .eyebrow{font-size:14px;letter-spacing:.5em;margin:0 -.5em 12px 0}
 /* board picker: each board drawn small, as it really is */
@@ -230,14 +233,14 @@ h1{font-size:26px} h2{font-size:18px} .win h1{font-size:40px;letter-spacing:.3em
       </div>
       <div class="stack">
         <button class="pill" id="newGame" type="button">Nuova partita</button>
-        <button class="pill ghost" id="openBoards" type="button">Tavolo</button>
+        <button class="pill ghost" id="openBoards" type="button">Tavoliere</button>
         <button class="pill ghost" id="openResults" type="button">Risultati</button>
         <button class="pill ghost" id="openRules" type="button">Come si gioca</button>
       </div>
     </div>
 
     <div class="view" id="vBoards" hidden>
-      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Tavolo</h2></div>
+      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Tavoliere</h2></div>
       <div class="boards" id="boards"></div>
     </div>
 
@@ -248,11 +251,13 @@ h1{font-size:26px} h2{font-size:18px} .win h1{font-size:40px;letter-spacing:.3em
     </div>
 
     <div class="view pick" id="vMode" hidden>
+      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuova partita</h2></div>
       <button class="pill" id="pickAi" type="button">Contro il computer</button>
       <button class="pill" id="pickTwo" type="button">In due</button>
     </div>
 
     <div class="view pick" id="vLevel" hidden>
+      <div class="top"><button class="link back" data-back="mode" type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Livello</h2></div>
       <button class="pill" data-level="1" type="button">Facile</button>
       <button class="pill" data-level="2" type="button">Medio</button>
       <button class="pill" data-level="3" type="button">Difficile</button>
@@ -493,12 +498,31 @@ function autoPass(){
   const g=S.gen;
   setTimeout(()=>{if(g===S.gen&&S.phase==='nomove')endTurn()},settleLeft()+1900);
 }
-function opening(){
-  let a,b;do{a=r6();b=r6()}while(a===b);
-  S.dice=[a,b];S.cur=a>b?0:1;S.rollId=(S.rollId||0)+1;markRoll();
-  S.phase='openingShow';render();
+/* the opening: each side throws one die; the higher starts and plays both; a tie is thrown again */
+function openRoll(p){
+  if(S.phase!=='opening'||S.busy)return;
+  if(!S.open)S.open=[null,null];
+  if(S.open[p]!=null)return;
+  S.open[p]=r6();S.lastOpen=p;S.rollId=(S.rollId||0)+1;
+  settleAt=reduceMotion?0:performance.now()+1420;
+  save();render();
   const g=S.gen;
-  setTimeout(()=>{if(g===S.gen)startMovePhase()},1700);
+  if(S.open[0]==null||S.open[1]==null){setTimeout(()=>{if(g===S.gen&&!S.busy)render()},settleLeft()+20);return}
+  setTimeout(()=>{
+    if(g!==S.gen)return;
+    S.phase='openingShow';render();
+    const [a,c]=S.open;
+    setTimeout(()=>{
+      if(g!==S.gen)return;
+      if(a===c){S.phase='opening';S.open=[null,null];S.lastOpen=null;save();render();aiOpening();return}
+      S.dice=[a,c];S.cur=a>c?0:1;S.open=null;S.lastOpen=null;startMovePhase();
+    },1800);
+  },settleLeft()+150);
+}
+/* the computer throws its opening die by itself, a moment after the table is set */
+function aiOpening(){
+  if(S.mode!=='ai'||S.phase!=='opening'||(S.open&&S.open[1]!=null))return;
+  const g=S.gen;setTimeout(()=>{if(g===S.gen)openRoll(1)},700);
 }
 function humanRoll(){S.dice=[r6(),r6()];S.rollId=(S.rollId||0)+1;markRoll();startMovePhase()}
 /* the result belongs to the dice: hints, highlights and messages wait until they have landed */
@@ -578,7 +602,6 @@ function clickTarget(t){
 function onDice(){
   if(S.busy)return;
   keepAwake();
-  if(S.phase==='opening')return opening();
   if(S.phase==='roll'&&humanTurn())return humanRoll();
   if(S.phase==='move'&&humanTurn()&&S.made.length===S.maxLen)return endTurn();
   if(S.phase==='over')return newGame();
@@ -590,8 +613,8 @@ function undo(){
 function newGame(){
   S.gen++;
   Object.assign(S,{st:initialBoard(),cur:0,phase:'opening',dice:[],made:[],turnStart:null,seqs:[],maxLen:0,
-    sel:null,log:[],result:null,busy:false,anim:null});
-  save();render();
+    sel:null,log:[],result:null,busy:false,anim:null,open:[null,null],lastOpen:null});
+  save();render();aiOpening();
 }
 function startNew(mode,level){
   S.mode=mode;if(level)S.level=level;
@@ -675,6 +698,8 @@ const grad=(id,c)=>`<radialGradient id="${id}" cx="38%" cy="34%" r="75%"><stop o
 const DEFS=()=>`<defs><linearGradient id="gloss" x1="0" y1="1" x2=".6" y2="0"><stop offset="0%" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="45%" stop-color="#FFFFFF" stop-opacity=".85"/><stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient><radialGradient id="sh2"><stop offset="82%" stop-color="${shade(TH().field,.3,.4)}" stop-opacity=".85"/><stop offset="100%" stop-color="${shade(TH().field,.3,.4)}" stop-opacity="0"/></radialGradient><radialGradient id="sh"><stop offset="40%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity="${Math.min(1,.55*(TH().shadow||1))}"/><stop offset="70%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity="${Math.min(1,.2*(TH().shadow||1))}"/><stop offset="100%" stop-color="${shade(TH().field,.42,.4)}" stop-opacity="0"/></radialGradient><linearGradient id="bevel" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#FFFFFF" stop-opacity=".32"/><stop offset="40%" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="65%" stop-color="#000000" stop-opacity="0"/><stop offset="100%" stop-color="#000000" stop-opacity=".1"/></linearGradient>
 <filter id="occ" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB"><feFlood flood-color="${shade(TH().frame,.72,.5)}"/><feComposite in2="SourceAlpha" operator="out" result="wall"/><feGaussianBlur in="wall" stdDeviation="${(G.r*.4).toFixed(1)}"/><feOffset dx="${(G.r*.1).toFixed(1)}" dy="${(G.r*.2).toFixed(1)}"/><feComponentTransfer result="near"><feFuncA type="linear" slope=".68"/></feComponentTransfer><feGaussianBlur in="wall" stdDeviation="${(G.r*1.7).toFixed(1)}"/><feOffset dx="${(G.r*.3).toFixed(1)}" dy="${(G.r*.55).toFixed(1)}"/><feComponentTransfer result="far"><feFuncA type="linear" slope=".55"/></feComponentTransfer><feMerge><feMergeNode in="far"/><feMergeNode in="near"/></feMerge><feComposite in2="SourceAlpha" operator="in"/></filter>
 <filter id="ds" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0.6" dy="2" stdDeviation="2.4" flood-color="#000" flood-opacity=".38"/></filter></defs>`;
+/* the board's colours, handed to the stylesheet */
+function boardVars(th){const st=$('board').style;st.setProperty('--frame',th.frame);st.setProperty('--frameLine',th.frameLine);st.setProperty('--hinge',th.hinge);st.setProperty('--field',th.field);st.setProperty('--tray',th.tray);st.setProperty('--pA',th.pA);st.setProperty('--pB',th.pB);st.setProperty('--markC',th.mark);st.setProperty('--boardText',th.text);st.setProperty('--hl',th.hl)}
 function render(){
   if(!G)layout();
   const s=S.st,{r,pw,b,t,F,pl,band,R,L,Sh,barX,trayX,midY,trayH}=G;
@@ -767,19 +792,32 @@ function render(){
   }
   h+=selDraw;
 
+  if(PREVIEW){boardVars(th);$('board').innerHTML=`<g id="root"${G.port?` transform="translate(${Sh} 0) rotate(90)"`:''}>${DEFS()+h}</g>`;return}
   /* dice in the right half of the centre band, undo in the left */
   const ds=Math.min(band*1.15,pw*.8),gap=ds*.5,dcx=barX+b+3*pw,dcy=midY,specs=[];
   const anchor=(i,x,y,z)=>`<rect class="dAnchor" data-i="${i}" x="${x}" y="${y}" width="${z}" height="${z}" fill="none"/>`;
-  if(S.phase==='opening'||(S.phase==='roll'&&humanTurn())){
-    const owners=S.phase==='opening'?[0,1]:[S.cur,S.cur];
+  if(S.phase==='opening'||S.phase==='openingShow'){
+    /* who starts: white throws one die in the right half, black in the left; the computer throws its own */
+    const op=S.open||[null,null];
+    for(const p of [1,0]){
+      const x=(p?G.x0:barX+b)+3*pw-ds/2,y=dcy-ds/2;
+      if(op[p]!=null){specs.push({v:op[p],p,used:false,still:S.lastOpen!==p});h+=anchor(specs.length-1,x,y,ds)}
+      else if(isAI(p))h+=`<g opacity=".3">${die(x,y,ds,0,p)}</g>`;
+      else h+=`<g class="wait"><g opacity=".55">${die(x,y,ds,0,p)}</g>${rectRing(x-3,y-3,ds+6,ds+6,ds*.2,true)}</g>`;
+    }
+    if(S.phase==='openingShow'&&!settling()){
+      const a=op[0],c=op[1],n=names();
+      const msg=a===c?'Pari · si ritira':S.mode==='ai'?(a>c?'Inizi tu':'Inizia il computer'):`Inizia il ${n[a>c?0:1].toLowerCase()}`;
+      /* set on the bar, upright on screen whichever way the board is turned */
+      const fs=Math.min(band*.3,pw*.3),w=msg.length*fs*.98+fs*2.6,hh=fs*2.7,cx=barX+b/2;
+      h+=`<g${upright(cx,midY)}><rect x="${cx-w/2}" y="${midY-hh/2}" width="${w}" height="${hh}" rx="${hh/2}" fill="${th.frame}"/>`+
+        `<text class="note" x="${cx+fs*.16}" y="${midY}" font-size="${fs.toFixed(1)}">${msg.toUpperCase()}</text></g>`;
+    }
+  }else if(S.phase==='roll'&&humanTurn()){
     let x0=dcx-(2*ds+gap)/2;
     h+=`<g class="wait">`;
-    owners.forEach(p=>{h+=`<g opacity=".55">${die(x0,dcy-ds/2,ds,0,p)}</g>`+rectRing(x0-3,dcy-ds/2-3,ds+6,ds+6,ds*.2,true);x0+=ds+gap});
+    [S.cur,S.cur].forEach(p=>{h+=`<g opacity=".55">${die(x0,dcy-ds/2,ds,0,p)}</g>`+rectRing(x0-3,dcy-ds/2-3,ds+6,ds+6,ds*.2,true);x0+=ds+gap});
     h+=`</g>`;
-  }else if(S.phase==='openingShow'){
-    const x0=dcx-(2*ds+gap)/2;
-    specs.push({v:S.dice[0],p:0,used:false},{v:S.dice[1],p:1,used:false});
-    h+=anchor(0,x0,dcy-ds/2,ds)+anchor(1,x0+ds+gap,dcy-ds/2,ds);
   }else if(S.dice.length){
     const list=diceList(S.dice),used=list.map(()=>false);
     for(const m of S.made){const j=list.findIndex((d,ix)=>d===m.die&&!used[ix]);if(j>=0)used[j]=true}
@@ -809,7 +847,8 @@ function render(){
   h+=`<rect class="hit" data-t="bar" x="${barX}" y="${r}" width="${b}" height="${F}"/>`;
   h+=`<rect class="hit" data-t="off" x="${trayX}" y="${r}" width="${t}" height="${trayH}"/><rect class="hit" data-t="off" x="${trayX}" y="${G.botY}" width="${t}" height="${trayH}"/>`;
   h+=`<rect class="hit" data-t="menu" x="${trayX-r*.5}" y="${midY-G.sq/2-r*.5}" width="${t+r}" height="${G.sq+r}"/>`;
-  const diceTap=!S.busy&&(S.phase==='opening'||S.phase==='over'||(S.phase==='roll'&&humanTurn())||(interactive&&S.made.length===S.maxLen));
+  if(S.phase==='opening'&&!S.busy)for(const p of [0,1])if(!isAI(p)&&(S.open||[])[p]==null)h+=`<rect class="hit" data-t="open${p}" x="${p?G.x0:barX+b}" y="${midY-band/2}" width="${6*pw}" height="${band}"/>`;
+  const diceTap=!S.busy&&(S.phase==='over'||(S.phase==='roll'&&humanTurn())||(interactive&&S.made.length===S.maxLen));
   if(diceTap)h+=`<rect class="hit" data-t="dice" x="${barX+b}" y="${midY-band/2}" width="${6*pw}" height="${band}"/>`;
   if(interactive&&S.made.length)h+=`<rect class="hit" data-t="undo" x="${ux-pw}" y="${midY-band/2}" width="${pw*2}" height="${band}"/>`;
 
@@ -825,7 +864,7 @@ function render(){
   /* the checker held under the finger */
   if(S.drag){const RR=S.drag.loc==='bar'?G.bR:R;h+=`<g id="dragG" class="fly" transform="translate(${S.drag.x} ${S.drag.y}) scale(1.08)">${checker(0,0,S.cur,5,RR,1)}</g>`}
   const body=DEFS()+h;
-  {const st=$('board').style;st.setProperty('--frame',th.frame);st.setProperty('--frameLine',th.frameLine);st.setProperty('--hinge',th.hinge);st.setProperty('--field',th.field);st.setProperty('--tray',th.tray);st.setProperty('--pA',th.pA);st.setProperty('--pB',th.pB);st.setProperty('--markC',th.mark);st.setProperty('--boardText',th.text);st.setProperty('--hl',th.hl)}
+  boardVars(th);
   $('board').innerHTML=`<g id="root"${G.port?` transform="translate(${Sh} 0) rotate(90)"`:''}>${body}</g>`;
   syncDice(specs);syncCube();
 }
@@ -874,9 +913,9 @@ function syncDice(specs){
     if(!fresh)return;
     const cube=el.querySelector('.cube'),th=el.querySelector('.dthrow'),sh=el.querySelector('.dshadow');
     cube.style.transform=cubeT(s.v,0);
-    if(!throwIt){el.classList.add('rest');return}
+    if(!throwIt||s.still){el.classList.add('rest');return}
     /* with a double only the middle pair is thrown; the outer two split off them once they land */
-    const ti=dbl?(i===1?0:i===2?1:-1):i;
+    const ti=s.still===false?0:dbl?(i===1?0:i===2?1:-1):i;
     if(ti<0){
       el.classList.add('rest');
       const src=rects[i===0?1:2],ox=src.left-r.left,oy=src.top-r.top,start=1500;
@@ -1030,12 +1069,13 @@ function renderSheet(){
   $('pickAi').classList.toggle('ghost',S.mode!=='ai');$('pickTwo').classList.toggle('ghost',S.mode!=='two');
 }
 /* each board drawn by the game itself, on the opening position, at the screen's own proportions */
+let PREVIEW=false;
 function renderBoards(){
   const keep={board:BOARD,st:S.st,phase:S.phase,dice:S.dice,made:S.made,sel:S.sel,anim:S.anim,drag:S.drag,cur:S.cur};
   let out='';
   for(const k of Object.keys(BOARDS)){
     BOARD=k;Object.assign(S,{st:initialBoard(),phase:'opening',dice:[],made:[],sel:null,anim:null,drag:null,cur:0});
-    render();
+    PREVIEW=true;render();PREVIEW=false;
     const b=$('board'),inner=b.innerHTML.replace(/id="([\w-]+)"/g,`id="$1-${k}"`).replace(/url\(#([\w-]+)\)/g,`url(#$1-${k})`);
     out+=`<button class="bp" data-board="${k}" type="button" aria-current="${k===keep.board}"><svg viewBox="${b.getAttribute('viewBox')}" style="${b.getAttribute('style')}" aria-hidden="true">${inner}</svg><span>${BOARDS[k].name}</span></button>`;
   }
@@ -1074,8 +1114,8 @@ function closeWin(){$('win').hidden=true}
 
 /* ---------- persistence ---------- */
 function snapshot(){
-  const {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId}=S;
-  return {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId};
+  const {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId,open}=S;
+  return {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId,open};
 }
 function save(){try{localStorage.setItem('tavola-game',JSON.stringify(snapshot()))}catch(e){}}
 function saveScore(){try{localStorage.setItem('tavola-score',JSON.stringify(score))}catch(e){}}
@@ -1084,7 +1124,9 @@ function restore(d){
   Object.assign(S,d,{sel:null,seqs:[],maxLen:0,busy:false,anim:null});
   if(!Array.isArray(S.log))S.log=[];
   if(![1,2,3].includes(S.level))S.level=2;
-  if(S.phase==='openingShow'){S.phase='opening';S.dice=[]}
+  if(S.phase==='openingShow'){S.phase='opening';S.dice=[];S.open=[null,null]}
+  if(S.phase==='opening'&&!Array.isArray(S.open))S.open=[null,null];
+  S.lastOpen=null;
   if(S.phase==='ai'){
     if(S.turnStart){S.st=clone(S.turnStart);S.made=[]}
     S.phase='roll';S.dice=[];
@@ -1110,6 +1152,7 @@ function start(data){
   shownRoll=S.rollId||0;
   layout();render();
   if(isAI(S.cur)&&S.phase==='roll')aiTurn();
+  aiOpening();
   if(S.phase==='nomove')autoPass();
 }
 
@@ -1120,6 +1163,7 @@ $('board').addEventListener('click',e=>{
   const t=el.dataset.t;
   if(t==='menu'){openSheet();return}
   if(t==='dice'){onDice();return}
+  if(t==='open0'||t==='open1'){keepAwake();openRoll(+t[4]);return}
   if(t==='undo'){undo();return}
   keepAwake();
   clickTarget(t==='bar'||t==='off'?t:+t);
@@ -1130,7 +1174,7 @@ try{new ResizeObserver(onResize).observe($('app'))}catch(e){window.addEventListe
 $('close1').addEventListener('click',closeSheet);
 $('sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
 $('win').addEventListener('click',e=>{if(e.target.id==='win')closeWin()});
-document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>{if(backTo==='win'){closeSheet();openWin()}else showView('menu')}));
+document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.back)showView(b.dataset.back);else if(backTo==='win'){closeSheet();openWin()}else showView('menu')}));
 $('openBoards').addEventListener('click',()=>showView('boards'));
 $('openResults').addEventListener('click',()=>showView('results'));
 $('boards').addEventListener('click',e=>{const b=e.target.closest('[data-board]');if(!b)return;BOARD=b.dataset.board;try{localStorage.setItem('bgs3-board',BOARD)}catch(e){}closeSheet();if(!S.busy)render()});
@@ -1145,7 +1189,7 @@ $('newGame').addEventListener('click',()=>showView('mode'));
 $('pickAi').addEventListener('click',()=>showView('level'));
 $('pickTwo').addEventListener('click',()=>startNew('two'));
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>startNew('ai',+b.dataset.level)));
-$('winNew').addEventListener('click',()=>{closeWin();openSheet('mode')});
+$('winNew').addEventListener('click',()=>{closeWin();openSheet('mode','win')});
 $('winMoves').addEventListener('click',()=>{closeWin();openSheet('moves','win')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheet();closeWin()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lock===null&&S.phase!=='opening')keepAwake()});
