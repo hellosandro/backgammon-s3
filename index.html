@@ -793,8 +793,9 @@ function render(){
   h+=selDraw;
 
   if(PREVIEW){boardVars(th);$('board').innerHTML=`<g id="root"${G.port?` transform="translate(${Sh} 0) rotate(90)"`:''}>${DEFS()+h}</g>`;return}
-  /* dice in the right half of the centre band, undo in the left */
-  const ds=Math.min(band*1.15,pw*.8),gap=ds*.5,dcx=barX+b+3*pw,dcy=midY,specs=[];
+  /* each side throws in its own half: white on the right, black on the left; undo and notes take the other half */
+  const ownX=S.cur?G.x0:barX+b,otherX=S.cur?barX+b:G.x0;
+  const ds=Math.min(band*1.15,pw*.8),gap=ds*.5,dcx=ownX+3*pw,dcy=midY,specs=[];
   const anchor=(i,x,y,z)=>`<rect class="dAnchor" data-i="${i}" x="${x}" y="${y}" width="${z}" height="${z}" fill="none"/>`;
   if(S.phase==='opening'||S.phase==='openingShow'){
     /* who starts: white throws one die in the right half, black in the left; the computer throws its own */
@@ -833,9 +834,9 @@ function render(){
   }
   if(!settling()&&(S.phase==='nomove'||(S.phase==='ai'&&S.dice.length&&S.maxLen===0&&!S.made.length))){
     const fs=Math.min(band*.26,pw*.3);
-    h+=`<text class="note" x="${G.x0+3*pw}" y="${midY}" font-size="${fs.toFixed(1)}">NESSUNA MOSSA POSSIBILE</text>`;
+    h+=`<text class="note" x="${otherX+3*pw}" y="${midY}" font-size="${fs.toFixed(1)}">NESSUNA MOSSA POSSIBILE</text>`;
   }
-  const ux=G.x0+3*pw,us=Math.min(band*.22,pw*.3);
+  const ux=otherX+3*pw,us=Math.min(band*.22,pw*.3);
   if(interactive&&S.made.length){
     const a=`M${ux+us*.9} ${midY-us*.2}A${us} ${us} 0 1 0 ${ux+us*.5} ${midY+us*.85}`;
     const hd=`M${ux+us*.35} ${midY-us*.55}L${ux+us*.95} ${midY-us*.15}L${ux+us*1.35} ${midY-us*.75}`;
@@ -849,7 +850,7 @@ function render(){
   h+=`<rect class="hit" data-t="menu" x="${trayX-r*.5}" y="${midY-G.sq/2-r*.5}" width="${t+r}" height="${G.sq+r}"/>`;
   if(S.phase==='opening'&&!S.busy)for(const p of [0,1])if(!isAI(p)&&(S.open||[])[p]==null)h+=`<rect class="hit" data-t="open${p}" x="${p?G.x0:barX+b}" y="${midY-band/2}" width="${6*pw}" height="${band}"/>`;
   const diceTap=!S.busy&&(S.phase==='over'||(S.phase==='roll'&&humanTurn())||(interactive&&S.made.length===S.maxLen));
-  if(diceTap)h+=`<rect class="hit" data-t="dice" x="${barX+b}" y="${midY-band/2}" width="${6*pw}" height="${band}"/>`;
+  if(diceTap)h+=`<rect class="hit" data-t="dice" x="${ownX}" y="${midY-band/2}" width="${6*pw}" height="${band}"/>`;
   if(interactive&&S.made.length)h+=`<rect class="hit" data-t="undo" x="${ux-pw}" y="${midY-band/2}" width="${pw*2}" height="${band}"/>`;
 
   /* checkers in flight */
