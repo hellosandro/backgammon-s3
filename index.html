@@ -159,8 +159,11 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .card{position:relative}
 .top{justify-content:center}
 .top>.link{position:absolute;right:14px;top:10px;font-size:11px}
-.top>.x{font-size:22px}
-.top>.back{right:auto;left:14px;font-size:24px;text-decoration:none;letter-spacing:0}
+/* close and back: drawn icons, a generous tap area around them */
+.top>.x,.top>.back{top:4px;right:4px;min-width:48px;min-height:48px;padding:0;display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--ink)}
+.top>.back{right:auto;left:4px}
+.top>.x svg,.top>.back svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#vMenu .eyebrow{font-size:14px;letter-spacing:.5em;margin:0 -.5em 12px 0}
 /* board picker: each board drawn small, as it really is */
 .boards{display:flex;justify-content:center;gap:22px}
 .card.boardsCard{width:min(820px,100%)}
@@ -223,7 +226,7 @@ h1{font-size:26px} h2{font-size:18px} .win h1{font-size:40px;letter-spacing:.3em
     <div class="view" id="vMenu">
       <div class="top">
         <div><p class="eyebrow">S3</p><h1>Backgammon</h1></div>
-        <button class="link x" id="close1" type="button" aria-label="Chiudi">×</button>
+        <button class="link x" id="close1" type="button" aria-label="Chiudi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></button>
       </div>
       <div class="stack">
         <button class="pill" id="newGame" type="button">Nuova partita</button>
@@ -234,12 +237,12 @@ h1{font-size:26px} h2{font-size:18px} .win h1{font-size:40px;letter-spacing:.3em
     </div>
 
     <div class="view" id="vBoards" hidden>
-      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro">‹</button><h2>Tavolo</h2></div>
+      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Tavolo</h2></div>
       <div class="boards" id="boards"></div>
     </div>
 
     <div class="view" id="vResults" hidden>
-      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro">‹</button><h2>Risultati</h2></div>
+      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Risultati</h2></div>
       <div class="res" id="res"></div>
       <div class="ask" id="resetBox"></div>
     </div>
@@ -256,12 +259,12 @@ h1{font-size:26px} h2{font-size:18px} .win h1{font-size:40px;letter-spacing:.3em
     </div>
 
     <div class="view" id="vMoves" hidden>
-      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro">‹</button><h2>Mosse</h2></div>
+      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Mosse</h2></div>
       <ol class="log" id="log"></ol>
     </div>
 
     <div class="view" id="vRules" hidden>
-      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro">‹</button><h2>Come si gioca</h2></div>
+      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Come si gioca</h2></div>
       <ol class="rules">
         <li>Tocca i dadi per tirare. Tocca una pedina cerchiata: i cerchi tratteggiati mostrano dove arriva con ciascun dado e con la loro somma. Tocca quello che scegli, oppure trascina la pedina: vicino a una casella valida viene attirata e si aggancia.</li>
         <li>Quando i dadi si cerchiano di giallo, la mossa è completa: toccali per passare il turno. La freccia accanto annulla l’ultimo passo.</li>
