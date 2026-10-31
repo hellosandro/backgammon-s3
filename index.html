@@ -176,11 +176,13 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .bp span{font:500 14px/1 var(--text);letter-spacing:.22em;margin-right:-.22em;padding-bottom:5px;border-bottom:1px solid transparent}
 .bp[aria-current="true"] span{border-color:var(--ink)}
 /* results: a label and a score on each line */
-.res{display:grid;grid-template-columns:auto auto;column-gap:36px;row-gap:10px;align-items:baseline}
-.res .eyebrow{grid-column:1/-1;margin:14px 0 2px;font-size:12px;color:var(--muted)}
-.res .eyebrow:first-child{margin-top:0}
+.res{display:flex;align-items:flex-start;gap:48px}
+.resCol{display:grid;grid-template-columns:auto auto;column-gap:32px;row-gap:8px;align-items:baseline}
+.res .eyebrow{grid-column:1/-1;margin:0 0 6px;text-align:left;font-size:12px;color:var(--muted)}
+.resCol+.resCol{border-left:1px solid var(--line);padding-left:48px;align-self:stretch;align-content:start}
+/* on a narrow upright screen the two blocks stack */
+@media (max-width:600px){.res{flex-direction:column;gap:26px}.resCol+.resCol{border-left:0;padding-left:0}}
 .res span{text-align:left;letter-spacing:.2em;font-size:15px;color:var(--ink)}
-.res{row-gap:8px}
 .res b{font:400 28px/1 var(--display);letter-spacing:.12em;font-variant-numeric:tabular-nums lining-nums;text-align:right}
 .ask{display:flex;flex-direction:column;align-items:center;gap:12px}
 .ask p{margin:0;letter-spacing:.2em;font-size:14px}
@@ -1086,8 +1088,8 @@ function renderBoards(){
 }
 function renderResults(){
   const row=(l,sc)=>`<span>${l}</span><b>${sc[0]} – ${sc[1]}</b>`;
-  $('res').innerHTML=`<p class="eyebrow">Contro il computer</p>`+[1,2,3].map(l=>row(LEVELS[l],score.ai[l])).join('')+
-    `<p class="eyebrow">In due</p>`+row('Bianco – Nero',score.two);
+  $('res').innerHTML=`<div class="resCol"><p class="eyebrow">Contro il computer</p>`+[1,2,3].map(l=>row(LEVELS[l],score.ai[l])).join('')+`</div>`+
+    `<div class="resCol"><p class="eyebrow">In due</p>`+row('Bianco – Nero',score.two)+`</div>`;
   $('resetBox').innerHTML=`<button class="pill ghost small" id="resetAsk" type="button">Azzera</button>`;
 }
 function askReset(){
