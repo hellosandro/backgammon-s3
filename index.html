@@ -128,7 +128,7 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .pick .pill{width:100%}
 .card.narrow{width:min(300px,100%)}
 .log{margin:0;padding:0;list-style:none;font-size:12.5px;font-variant-numeric:tabular-nums;border-top:1px solid var(--line)}
-.log li{display:grid;grid-template-columns:2.2em 5.5em 3em 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.log li{display:grid;grid-template-columns:2.2em 9.5em 3em 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .log .n{color:var(--muted)}
 .log .d{font-family:var(--display);font-size:13.5px}
 .log .empty{display:block;color:var(--muted)}
@@ -176,12 +176,14 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .bp span{font:500 14px/1 var(--text);letter-spacing:.22em;margin-right:-.22em;padding-bottom:5px;border-bottom:1px solid transparent}
 .bp[aria-current="true"] span{border-color:var(--ink)}
 /* results: a label and a score on each line */
-.res{display:flex;align-items:flex-start;gap:48px}
+.res{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:40px;width:min(720px,100%)}
 .resCol{display:grid;grid-template-columns:auto auto;column-gap:32px;row-gap:8px;align-items:baseline}
 .res .eyebrow{grid-column:1/-1;margin:0 0 6px;text-align:left;font-size:12px;color:var(--muted)}
-.resCol+.resCol{border-left:1px solid var(--line);padding-left:48px;align-self:stretch;align-content:start}
+.resCol{grid-template-columns:1fr auto;column-gap:20px}
+.resCol span,.resCol b{white-space:nowrap}
+.resCol+.resCol{border-left:1px solid var(--line);padding-left:40px;align-self:stretch;align-content:start}
 /* on a narrow upright screen the two blocks stack */
-@media (max-width:600px){.res{flex-direction:column;gap:26px}.resCol+.resCol{border-left:0;padding-left:0}}
+@media (max-width:600px){.res{grid-template-columns:1fr;gap:26px;width:min(300px,100%)}.resCol+.resCol{border-left:0;padding-left:0}}
 .res span{text-align:left;letter-spacing:.2em;font-size:15px;color:var(--ink)}
 .res b{font:400 28px/1 var(--display);letter-spacing:.12em;font-variant-numeric:tabular-nums lining-nums;text-align:right}
 .ask{display:flex;flex-direction:column;align-items:center;gap:12px}
@@ -276,7 +278,7 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
       <ol class="rules">
         <li>Tocca i dadi per tirare. Tocca una pedina cerchiata: i cerchi tratteggiati mostrano dove arriva con ciascun dado e con la loro somma. Tocca quello che scegli, oppure trascina la pedina: vicino a una casella valida viene attirata e si aggancia.</li>
         <li>Quando i dadi si cerchiano di giallo, la mossa è completa: toccali per passare il turno. La freccia accanto annulla l’ultimo passo.</li>
-        <li>Il bianco porta le pedine verso il suo quadrante, accanto al vassoio. Un doppio si gioca quattro volte.</li>
+        <li>Tu, o il giocatore 1, porti le pedine verso il tuo quadrante, accanto al vassoio. Un doppio si gioca quattro volte.</li>
         <li>Non puoi fermarti dove l’avversario ha due o più pedine. Una pedina sola si può colpire: va sulla barra e deve rientrare per prima.</li>
         <li>Con tutte le pedine a casa, le porti fuori nel vassoio. Vince chi le esce tutte. Gammon vale 2 punti, backgammon 3.</li>
         <li>Tocca MENU, nel vassoio di destra, per aprire il menu.</li>
@@ -452,7 +454,7 @@ const TH=()=>BOARDS[BOARD];
 let score={ai:{1:[0,0],2:[0,0],3:[0,0]},two:[0,0]};
 const tally=()=>S.mode==='ai'?score.ai[S.level]:score.two;
 
-const names=()=>S.mode==='ai'?['Tu','Computer']:['Bianco','Nero'];
+const names=()=>S.mode==='ai'?['Tu','Computer']:['Giocatore 1','Giocatore 2'];
 const isAI=p=>S.mode==='ai'&&p===1;
 const humanTurn=()=>!isAI(S.cur);
 
@@ -1089,7 +1091,7 @@ function renderBoards(){
 function renderResults(){
   const row=(l,sc)=>`<span>${l}</span><b>${sc[0]} – ${sc[1]}</b>`;
   $('res').innerHTML=`<div class="resCol"><p class="eyebrow">Contro il computer</p>`+[1,2,3].map(l=>row(LEVELS[l],score.ai[l])).join('')+`</div>`+
-    `<div class="resCol"><p class="eyebrow">In due</p>`+row('Bianco – Nero',score.two)+`</div>`;
+    `<div class="resCol"><p class="eyebrow">In due</p>`+row('Giocatore 1 – 2',score.two)+`</div>`;
   $('resetBox').innerHTML=`<button class="pill ghost small" id="resetAsk" type="button">Azzera</button>`;
 }
 function askReset(){
@@ -1100,7 +1102,7 @@ function showView(v){
   if(v==='results')renderResults();
   for(const [id,k] of [['vMenu','menu'],['vMode','mode'],['vLevel','level'],['vMoves','moves'],['vRules','rules'],['vBoards','boards'],['vResults','results']])$(id).hidden=k!==v;
   $('card').classList.toggle('wide',v==='moves'||v==='rules');
-  $('card').classList.toggle('boardsCard',v==='boards');
+  $('card').classList.toggle('boardsCard',v==='boards'||v==='results');
   $('card').classList.toggle('narrow',v==='mode'||v==='level');
 }
 /* where "‹" leads: the menu, or back to the end of game when the moves were opened from there */
