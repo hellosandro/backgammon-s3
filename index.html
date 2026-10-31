@@ -143,6 +143,8 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
   .app{padding-block:22px 14px}
   .card{width:min(620px,100%)}
   .stack .pill{min-height:44px}
+  /* the menu's four buttons in two columns, so they fit under the title without scrolling */
+  #menuStack{display:grid;grid-template-columns:1fr 1fr;width:min(560px,100%);gap:12px}
   .view{gap:14px}
   .card{position:relative}
 }
@@ -187,6 +189,8 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .res span{text-align:left;letter-spacing:.2em;font-size:15px;color:var(--ink)}
 .res b{font:400 28px/1 var(--display);letter-spacing:.12em;font-variant-numeric:tabular-nums lining-nums;text-align:right}
 .ask{display:flex;flex-direction:column;align-items:center;gap:12px}
+.ctx{margin:12px 0 0;font-size:12px;letter-spacing:.3em;margin-right:-.3em;color:var(--muted)}
+.ask .sub{color:var(--muted);font-size:12px}
 .ask p{margin:0;letter-spacing:.2em;font-size:14px}
 .ask .row{display:flex;gap:12px}
 .pill.small{min-height:40px;padding:0 24px;font-size:12px}
@@ -223,7 +227,8 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
     <h1 id="winTitle">Hai vinto</h1>
     <p class="tally" id="winTally"></p>
     <div class="stack">
-      <button class="pill" id="winNew" type="button">Nuova partita</button>
+      <button class="pill" id="winAgain" type="button">Rivincita</button>
+      <button class="pill ghost" id="winNew" type="button">Nuova partita</button>
       <button class="pill ghost" id="winMoves" type="button">Vedi mosse</button>
     </div>
   </div>
@@ -233,11 +238,16 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
   <div class="card" id="card" role="dialog" aria-label="Menu">
     <div class="view" id="vMenu">
       <div class="top">
-        <div><p class="eyebrow">S3</p><h1>Backgammon</h1></div>
+        <div><p class="eyebrow">S3</p><h1>Backgammon</h1><p class="ctx" id="menuCtx"></p></div>
         <button class="link x" id="close1" type="button" aria-label="Chiudi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 5.5l13 13M18.5 5.5l-13 13"/></svg></button>
       </div>
-      <div class="stack">
+      <div class="ask" id="resignAsk" hidden>
+        <p>Abbandonare la partita?</p><p class="sub" id="resignWho"></p>
+        <div class="row"><button class="pill small" id="resignYes" type="button">Sì</button><button class="pill ghost small" id="resignNo" type="button">No</button></div>
+      </div>
+      <div class="stack" id="menuStack">
         <button class="pill" id="newGame" type="button">Nuova partita</button>
+        <button class="pill ghost" id="resign" type="button">Abbandona</button>
         <button class="pill ghost" id="openBoards" type="button">Tavoli da gioco</button>
         <button class="pill ghost" id="openResults" type="button">Risultati</button>
         <button class="pill ghost" id="openRules" type="button">Come si gioca</button>
@@ -1066,8 +1076,15 @@ function initDrag(){
   bd.addEventListener('pointerup',end);bd.addEventListener('pointercancel',end);
 }
 
+/* a game is under way once the opening dice are settled and nobody has won yet */
+const inProgress=()=>S.phase!=='over'&&S.phase!=='opening'&&S.phase!=='openingShow';
 function renderSheet(){
   const n=names();
+  $('menuCtx').textContent=S.mode==='ai'?`Contro il computer · ${LEVELS[S.level]}`:'In due';
+  /* during a game the only way out is to resign; a new game is offered once there is nothing to lose */
+  const on=inProgress();
+  $('newGame').hidden=on;$('resign').hidden=!on;
+  $('resignAsk').hidden=true;$('menuStack').hidden=false;
   $('log').innerHTML=S.log.length
     ?S.log.map((t,i)=>({t,i})).reverse().map(({t,i})=>`<li><span class="n">${i+1}</span><span>${n[t.p]}</span><span class="d">${t.dice[0]}–${t.dice[1]}</span><span>${t.moves||'—'}</span></li>`).join('')
     :`<li><span class="empty">Nessuna mossa ancora.</span></li>`;
@@ -1109,10 +1126,19 @@ function showView(v){
 let backTo='menu';
 function openSheet(v='menu',from='menu'){backTo=from;renderSheet();showView(v);$('sheet').hidden=false}
 function closeSheet(){$('sheet').hidden=true}
+/* resigning, as on FIBS, concedes a single game: the opponent takes the point */
+function resign(){
+  const loser=S.mode==='ai'?0:S.cur,w=1-loser;
+  S.gen++;
+  Object.assign(S,{phase:'over',busy:false,anim:null,drag:null,sel:null,result:{w,pts:1,kind:'resign'}});
+  tally()[w]+=1;saveScore();save();render();
+  closeSheet();openWin();
+}
 function openWin(){
   const r=S.result;if(!r)return;
   const n=names();
-  $('winTitle').textContent=S.mode==='ai'?(r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`;
+  $('winTitle').textContent=S.mode==='ai'?(r.kind==='resign'?'Hai abbandonato':r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`;
+  $('winMoves').hidden=!S.log.length;
   const sc=tally();$('winTally').textContent=`${sc[0]}–${sc[1]}`;
   $('win').hidden=false;
 }
@@ -1196,6 +1222,14 @@ $('pickAi').addEventListener('click',()=>showView('level'));
 $('pickTwo').addEventListener('click',()=>startNew('two'));
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>startNew('ai',+b.dataset.level)));
 $('winNew').addEventListener('click',()=>{closeWin();openSheet('mode','win')});
+$('winAgain').addEventListener('click',()=>startNew(S.mode,S.level));
+$('resign').addEventListener('click',()=>{
+  const loser=S.mode==='ai'?0:S.cur;
+  $('resignWho').textContent=S.mode==='ai'?'Il punto va al computer':`Il punto va al ${names()[1-loser].toLowerCase()}`;
+  $('menuStack').hidden=true;$('resignAsk').hidden=false;
+});
+$('resignNo').addEventListener('click',()=>{$('resignAsk').hidden=true;$('menuStack').hidden=false});
+$('resignYes').addEventListener('click',resign);
 $('winMoves').addEventListener('click',()=>{closeWin();openSheet('moves','win')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheet();closeWin()}});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lock===null&&S.phase!=='opening')keepAwake()});
