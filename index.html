@@ -141,6 +141,8 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .win h1{font-size:44px}
 .stack{display:flex;flex-direction:column;gap:12px;width:min(280px,100%)}
 .stack .pill{width:100%}
+.win .card{width:auto;max-width:90vw;overflow:visible}
+.win h1 span{white-space:nowrap}
 .win .tally{font:500 40px/1 var(--display);letter-spacing:.3em;margin:0 -.3em 0 0;font-variant-numeric:tabular-nums lining-nums}
 @media (orientation: landscape) and (max-height: 520px){
   .app{padding-block:22px 14px}
@@ -1140,11 +1142,20 @@ function resign(){
 function openWin(){
   const r=S.result;if(!r)return;
   const n=names();
-  $('winTitle').textContent=S.mode==='ai'?(r.kind==='resign'?'Hai abbandonato':r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`;
+  $('winTitle').innerHTML=`<span>${S.mode==='ai'?(r.kind==='resign'?'Hai abbandonato':r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`}</span>`;
   $('winMoves').hidden=!S.log.length;
   const sc=tally();$('winTally').textContent=`${sc[0]}–${sc[1]}`;
-  $('win').hidden=false;
+  $('win').hidden=false;fitWinTitle();
 }
+/* the title keeps its size while it fits, and shrinks to stay within 90% of the screen's width */
+function fitWinTitle(){
+  const h=$('winTitle'),sp=h.firstChild;if(!sp||$('win').hidden)return;
+  h.style.fontSize='';
+  const w=sp.getBoundingClientRect().width,max=innerWidth*.9;
+  if(w>max)h.style.fontSize=(parseFloat(getComputedStyle(h).fontSize)*max/w).toFixed(1)+'px';
+  $('winTally').style.fontSize=h.style.fontSize; /* the score stays the same size as the title */
+}
+addEventListener('resize',fitWinTitle);
 function closeWin(){$('win').hidden=true}
 
 /* ---------- persistence ---------- */
