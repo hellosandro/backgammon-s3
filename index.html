@@ -129,7 +129,8 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .pill:active{transform:scale(.98)}
 .pick{align-items:stretch;gap:10px;padding-block:4px}
 .pick .pill{width:100%}
-.card.narrow{width:min(300px,100%)}
+.card.narrow{width:min(340px,100%)}
+.pick .pill{white-space:nowrap}
 .log{margin:0;padding:0;list-style:none;font-size:12.5px;font-variant-numeric:tabular-nums;border-top:1px solid var(--line)}
 .log li{display:grid;grid-template-columns:2.2em 9.5em 3em 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
 .log .n{color:var(--muted)}
@@ -211,6 +212,14 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .ask{display:flex;flex-direction:column;align-items:center;gap:12px}
 .ctx{margin:12px 0 0;font-size:12px;letter-spacing:.3em;margin-right:-.3em;color:var(--muted)}
 .ask .sub{color:var(--muted);font-size:12px}
+/* match length: four round choices, the current one filled */
+.lens{display:flex;justify-content:center;gap:14px;margin:-6px 0 10px}
+.len{width:48px;height:48px;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:inset 0 0 0 1px var(--ink);font:400 19px/1 var(--display);font-variant-numeric:lining-nums;letter-spacing:0}
+.len[aria-current="true"]{background:var(--ink);color:#000}
+.pick>.eyebrow{text-align:center;margin:0}
+.win .ctx{margin-top:-8px}
+/* match points, each player's in their own tray on the left */
+.scoreTxt{fill:var(--boardText,var(--cream));font-family:var(--display);font-weight:400;text-anchor:middle;dominant-baseline:central;font-variant-numeric:lining-nums;pointer-events:none}
 .ask p{margin:0;letter-spacing:.2em;font-size:14px}
 .ask .row{display:flex;gap:12px}
 .pill.small{min-height:40px;padding:0 24px;font-size:12px}
@@ -246,6 +255,7 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
   <div class="card" role="dialog" aria-labelledby="winTitle">
     <h1 id="winTitle">Hai vinto</h1>
     <p class="tally" id="winTally"></p>
+    <p class="ctx" id="winSub"></p>
     <div class="stack">
       <button class="pill" id="winAgain" type="button">Rivincita</button>
       <button class="pill ghost" id="winNew" type="button">Nuova partita</button>
@@ -289,6 +299,8 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
 
     <div class="view pick" id="vMode" hidden>
       <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuova partita</h2></div>
+      <p class="eyebrow">Punti per vincere</p>
+      <div class="lens" id="lens"><button class="len" data-len="1" type="button">1</button><button class="len" data-len="3" type="button">3</button><button class="len" data-len="5" type="button">5</button><button class="len" data-len="7" type="button">7</button></div>
       <button class="pill" id="pickAi" type="button">Contro il computer</button>
       <button class="pill" id="pickTwo" type="button">In due</button>
     </div>
@@ -460,7 +472,7 @@ function fmtMoves(moves,p){
 const $=id=>document.getElementById(id);
 const r6=()=>1+Math.floor(Math.random()*6);
 const reduceMotion=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
-const S={st:initialBoard(),cur:0,phase:'opening',dice:[],made:[],turnStart:null,seqs:[],maxLen:0,
+const S={match:{len:1,score:[0,0],over:false},st:initialBoard(),cur:0,phase:'opening',dice:[],made:[],turnStart:null,seqs:[],maxLen:0,
   sel:null,mode:'ai',level:2,rollId:0,log:[],result:null,gen:0,busy:false,anim:null};
 const LEVELS=['','Facile','Medio','Difficile'];
 /* boards: every colour, shape and ornament of a board lives here; adding a board means adding an entry */
@@ -484,6 +496,10 @@ try{const bb=localStorage.getItem('bgs3-board');if(BOARDS[bb])BOARD=bb}catch(e){
 const TH=()=>BOARDS[BOARD];
 /* results: against the computer one tally per level, two players one tally */
 let score={ai:{1:[0,0],2:[0,0],3:[0,0]},two:[0,0]};
+/* the match being played: its length, the points so far, and whether someone has reached the length */
+let MATCHLEN=1;
+try{const ml=+localStorage.getItem('bgs3-match');if([1,3,5,7].includes(ml))MATCHLEN=ml}catch(e){}
+const freshMatch=()=>({len:MATCHLEN,score:[0,0],over:false});
 const tally=()=>S.mode==='ai'?score.ai[S.level]:score.two;
 
 const names=()=>S.mode==='ai'?['Tu','Computer']:['Giocatore 1','Giocatore 2'];
@@ -577,9 +593,11 @@ function makeMove(m){
 function logTurn(){S.log.push({p:S.cur,dice:S.dice.slice(),moves:fmtMoves(S.made,S.cur)})}
 function finish(){
   S.phase='over';logTurn();
-  const r=resultOf(S.st,S.cur);
+  const r=resultOf(S.st,S.cur),m=S.match;
   S.result={w:S.cur,pts:r.pts,kind:r.kind};
-  tally()[S.cur]+=r.pts;saveScore();
+  /* the game's points go to the match; whoever reaches its length wins it, and the results count matches */
+  m.score[S.cur]+=r.pts;
+  if(m.score[S.cur]>=m.len){m.over=true;tally()[S.cur]+=1;saveScore()}
   S.sel=null;save();
   const g=S.gen;setTimeout(()=>{if(g===S.gen)openWin()},1100);
 }
@@ -641,7 +659,12 @@ function onDice(){
   keepAwake();
   if(S.phase==='roll'&&humanTurn())return humanRoll();
   if(S.phase==='move'&&humanTurn()&&S.made.length===S.maxLen)return endTurn();
-  if(S.phase==='over')return newGame();
+  if(S.phase==='over')return nextGame();
+}
+/* after a game: the next one of the same match, or a new match with the same settings once it is decided */
+function nextGame(){
+  if(!S.match.over){closeWin();newGame();return}
+  startNew(S.mode,S.level);
 }
 function undo(){
   if(S.busy||S.phase!=='move'||!S.made.length)return;
@@ -654,7 +677,7 @@ function newGame(){
   save();render();aiOpening();
 }
 function startNew(mode,level){
-  S.mode=mode;if(level)S.level=level;
+  S.mode=mode;if(level)S.level=level;S.match=freshMatch();
   try{localStorage.setItem('tavola-level',String(S.level))}catch(e){}
   closeSheet();closeWin();newGame();
 }
@@ -767,9 +790,13 @@ function render(){
   /* two identical trays, one in each half of the case; only the right one takes checkers borne off */
   const sq=G.sq,upright=(x,y)=>G.port?` transform="rotate(-90 ${x} ${y})"`:'';
   for(const tx of [G.trayLX,trayX])h+=`<rect class="trayF" x="${tx}" y="${r}" width="${t}" height="${trayH}"/><rect class="trayF" x="${tx}" y="${midY-sq/2}" width="${t}" height="${sq}"/><rect class="trayF" x="${tx}" y="${G.botY}" width="${t}" height="${trayH}"/>`;
-  /* right niche: the menu; left niche: the doubling cube, resting at 64 until the rule is in play */
+  /* right niche: the menu */
   {const cx=trayX+t/2,fs=Math.max(7,t*.165);h+=`<text class="menuTxt" x="${cx+fs*.1}" y="${midY}" font-size="${fs.toFixed(1)}"${upright(cx,midY)}>MENU</text>`}
-  {const cs=Math.min(band*1.15,pw*.8),cx=G.trayLX+t/2;h+=`<rect class="cAnchor" x="${cx-cs/2}" y="${midY-cs/2}" width="${cs}" height="${cs}" fill="none"/>`}
+  /* left trays: the match points, the opponent's at the top and mine at the bottom; the niche between stays empty */
+  if(!PREVIEW&&S.match&&S.match.len>1){
+    const cx=G.trayLX+t/2,fs=Math.min(t*.5,trayH*.4),num=(v,y)=>`<text class="scoreTxt" x="${cx}" y="${y}" font-size="${fs.toFixed(1)}"${upright(cx,y)}>${v}</text>`;
+    h+=num(S.match.score[1],r+trayH*.3)+num(S.match.score[0],G.botY+trayH*.7);
+  }
 
   /* ornaments on the field, under the points */
   /* four small diamonds on the centre line, under the second and fifth point of each half */
@@ -986,7 +1013,7 @@ function syncDice(specs){
 /* the doubling cube: the same ivory die, its faces 2 4 8 16 32 64, resting on 64 in the left niche */
 const CUBEFACES={1:64,2:2,3:4,4:8,5:16,6:32};
 function syncCube(){
-  const layer=$('cubeLayer'),a=$('board').querySelector('.cAnchor');if(!a)return;
+  const layer=$('cubeLayer'),a=$('board').querySelector('.cAnchor');if(!a){layer.innerHTML='';return}
   if(!layer.firstChild){
     let f='';
     for(const k of [1,2,3,4,5,6]){const [fx,fy]=FACE[k];f+=`<div class="face" style="transform:rotateX(${fx}deg) rotateY(${fy}deg) translateZ(var(--h))"><b>${CUBEFACES[k]}</b></div>`}
@@ -1102,7 +1129,8 @@ function initDrag(){
 const inProgress=()=>S.phase!=='over'&&S.phase!=='opening'&&S.phase!=='openingShow';
 function renderSheet(){
   const n=names();
-  $('menuCtx').textContent=S.mode==='ai'?`Contro il computer · ${LEVELS[S.level]}`:'In due';
+  $('menuCtx').textContent=(S.mode==='ai'?`Contro il computer · ${LEVELS[S.level]}`:'In due')+(S.match.len>1?` · a ${S.match.len}`:'');
+  document.querySelectorAll('[data-len]').forEach(b=>b.setAttribute('aria-current',String(+b.dataset.len===MATCHLEN)));
   /* during a game the only way out is to resign; a new game is offered once there is nothing to lose */
   const on=inProgress();
   $('newGame').hidden=on;$('resign').hidden=!on;
@@ -1149,20 +1177,26 @@ function showView(v){
 let backTo='menu';
 function openSheet(v='menu',from='menu'){backTo=from;renderSheet();showView(v);$('sheet').hidden=false}
 function closeSheet(){$('sheet').hidden=true}
-/* resigning, as on FIBS, concedes a single game: the opponent takes the point */
+/* resigning from the menu concedes the whole match */
 function resign(){
   const loser=S.mode==='ai'?0:S.cur,w=1-loser;
   S.gen++;
-  Object.assign(S,{phase:'over',busy:false,anim:null,drag:null,sel:null,result:{w,pts:1,kind:'resign'}});
-  tally()[w]+=1;saveScore();save();render();
+  Object.assign(S,{phase:'over',busy:false,anim:null,drag:null,sel:null,result:{w,pts:0,kind:'resign'}});
+  S.match.over=true;tally()[w]+=1;saveScore();save();render();
   closeSheet();openWin();
 }
 function openWin(){
   const r=S.result;if(!r)return;
   const n=names();
-  $('winTitle').innerHTML=`<span>${S.mode==='ai'?(r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`}</span>`;
+  const m=S.match,single=m.len===1;
+  /* a single game says who won; within a match it says whether the game or the match is decided */
+  const what=single?'':m.over?' il match':' la partita';
+  $('winTitle').innerHTML=`<span>${S.mode==='ai'?(r.w===0?'Hai vinto':'Hai perso')+what:single?`Vince il ${n[r.w]}`:m.over?`Il match va al ${n[r.w]}`:`Vince il ${n[r.w]}`}</span>`;
   $('winMoves').hidden=!S.log.length;
-  const sc=tally();$('winTally').textContent=`${sc[0]}–${sc[1]}`;
+  const sc=single?tally():m.score;$('winTally').textContent=`${sc[0]}–${sc[1]}`;
+  $('winSub').textContent=single?'':`A ${m.len}`;$('winSub').hidden=single;
+  $('winAgain').textContent=single||m.over?'Rivincita':'Continua';
+  $('winNew').hidden=!single&&!m.over;
   $('win').hidden=false;fitWinTitle();
 }
 /* the title keeps its size while it fits, and shrinks to stay within 90% of the screen's width */
@@ -1178,15 +1212,16 @@ function closeWin(){$('win').hidden=true}
 
 /* ---------- persistence ---------- */
 function snapshot(){
-  const {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId,open}=S;
-  return {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId,open};
+  const {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId,open,match}=S;
+  return {st,cur,phase,dice,made,turnStart,mode,level,log,result,rollId,open,match};
 }
 function save(){try{localStorage.setItem('tavola-game',JSON.stringify(snapshot()))}catch(e){}}
-function saveScore(){try{localStorage.setItem('tavola-score',JSON.stringify(score))}catch(e){}}
+function saveScore(){try{localStorage.setItem('bgs3-results',JSON.stringify(score))}catch(e){}}
 function restore(d){
   if(!d||!d.st||!Array.isArray(d.st.pts))return false;
   Object.assign(S,d,{sel:null,seqs:[],maxLen:0,busy:false,anim:null});
   if(!Array.isArray(S.log))S.log=[];
+  if(!S.match||!Array.isArray(S.match.score))S.match={len:1,score:[0,0],over:S.phase==='over'};
   if(![1,2,3].includes(S.level))S.level=2;
   if(S.phase==='openingShow'){S.phase='opening';S.dice=[];S.open=[null,null]}
   if(S.phase==='opening'&&!Array.isArray(S.open))S.open=[null,null];
@@ -1206,10 +1241,7 @@ async function keepAwake(){
 }
 function start(data){
   try{const lv=+localStorage.getItem('tavola-level');if([1,2,3].includes(lv))S.level=lv}catch(e){}
-  try{const sc=JSON.parse(localStorage.getItem('tavola-score'));if(sc&&sc.ai&&sc.two){
-    /* an older save kept a single tally against the computer: it goes to the level last played */
-    if(Array.isArray(sc.ai)){const a=sc.ai;sc.ai={1:[0,0],2:[0,0],3:[0,0]};sc.ai[S.level]=a}
-    score=sc}}catch(e){}
+  try{const sc=JSON.parse(localStorage.getItem('bgs3-results'));if(sc&&sc.ai&&sc.two)score=sc}catch(e){}
   let d=data&&data.game;
   if(!d){try{d=JSON.parse(localStorage.getItem('tavola-game'))}catch(e){}}
   restore(d);
@@ -1254,10 +1286,13 @@ $('pickAi').addEventListener('click',()=>showView('level'));
 $('pickTwo').addEventListener('click',()=>startNew('two'));
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>startNew('ai',+b.dataset.level)));
 $('winNew').addEventListener('click',()=>{closeWin();openSheet('mode','win')});
-$('winAgain').addEventListener('click',()=>startNew(S.mode,S.level));
+$('winAgain').addEventListener('click',nextGame);
+$('lens').addEventListener('click',e=>{const b=e.target.closest('[data-len]');if(!b)return;MATCHLEN=+b.dataset.len;try{localStorage.setItem('bgs3-match',String(MATCHLEN))}catch(e){}renderSheet()});
 $('resign').addEventListener('click',()=>{
   const loser=S.mode==='ai'?0:S.cur;
-  $('resignWho').textContent=S.mode==='ai'?'Il punto va al computer':`Il punto va al ${names()[1-loser].toLowerCase()}`;
+  const m=S.match.len>1;
+  $('resignAsk').firstElementChild.textContent=m?'Abbandonare il match?':'Abbandonare la partita?';
+  $('resignWho').textContent=S.mode==='ai'?(m?'Il match va al computer':'Il punto va al computer'):`${m?'Il match':'Il punto'} va al ${names()[1-loser].toLowerCase()}`;
   $('menuRow').hidden=true;$('resignAsk').hidden=false;
 });
 $('resignNo').addEventListener('click',()=>{$('resignAsk').hidden=true;$('menuRow').hidden=false});
