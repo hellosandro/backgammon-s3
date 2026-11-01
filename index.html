@@ -792,7 +792,9 @@ function render(){
   for(const tx of [G.trayLX,trayX])h+=`<rect class="trayF" x="${tx}" y="${r}" width="${t}" height="${trayH}"/><rect class="trayF" x="${tx}" y="${midY-sq/2}" width="${t}" height="${sq}"/><rect class="trayF" x="${tx}" y="${G.botY}" width="${t}" height="${trayH}"/>`;
   /* right niche: the menu */
   {const cx=trayX+t/2,fs=Math.max(7,t*.165);h+=`<text class="menuTxt" x="${cx+fs*.1}" y="${midY}" font-size="${fs.toFixed(1)}"${upright(cx,midY)}>MENU</text>`}
-  /* left trays: the match points, the opponent's at the top and mine at the bottom; the niche between stays empty */
+  /* left niche: the doubling cube, resting at 64, only when two people play; against the computer it stays empty */
+  if(!PREVIEW&&S.mode==='two'){const cs=Math.min(band*1.15,pw*.8),cx=G.trayLX+t/2;h+=`<rect class="cAnchor" x="${cx-cs/2}" y="${midY-cs/2}" width="${cs}" height="${cs}" fill="none"/>`}
+  /* left trays: the match points, the opponent's at the top and mine at the bottom */
   if(!PREVIEW&&S.match&&S.match.len>1){
     const cx=G.trayLX+t/2,fs=Math.min(t*.5,trayH*.4),num=(v,y)=>`<text class="scoreTxt" x="${cx}" y="${y}" font-size="${fs.toFixed(1)}"${upright(cx,y)}>${v}</text>`;
     h+=num(S.match.score[1],r+trayH*.3)+num(S.match.score[0],G.botY+trayH*.7);
