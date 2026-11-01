@@ -114,8 +114,10 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   padding-top:calc(max(8px,env(safe-area-inset-top,0px)) + 56px);padding-bottom:calc(max(8px,env(safe-area-inset-bottom,0px)) + 56px);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .sheet[hidden],.win[hidden],.view[hidden]{display:none}
-/* new match: question and answers centred in the room under the title, with as much space above them as below */
-.sheet.fixedQ{padding-top:calc(max(8px,env(safe-area-inset-top,0px)) + 48px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* new match: no title bar; "nuovo match" sits small over the question, which becomes the title, and the block is centred on the screen */
+.sheet.fixedQ{padding-top:max(8px,env(safe-area-inset-top,0px));padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+.sheet.fixedQ .top h2{display:none}
+.pick>.eyebrow.qey{margin:0 -.42em -2px 0;font-size:12px;text-align:center}
 .sheet.fixedQ .pick>.top{position:absolute}
 /* the end of game has no title bar: it centres on the whole screen */
 .win{padding-top:max(12px,env(safe-area-inset-top,0px));padding-bottom:max(12px,env(safe-area-inset-bottom,0px))}
@@ -222,7 +224,7 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 /* match length: four round choices, the current one filled */
 .lens{display:flex;justify-content:center;gap:16px}
 /* the question of each new-match screen: readable, the size of the buttons' words */
-.pick>.q{margin:0 -.26em 8px 0;font:500 16px/1.2 var(--text);letter-spacing:.26em;text-align:center}
+.pick>.q{margin:0 -.26em 8px 0;font:500 22px/1.2 var(--display);letter-spacing:.26em;text-align:center}
 .len{width:56px;height:56px;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:inset 0 0 0 1px var(--ink);font:400 19px/1 var(--display);font-variant-numeric:lining-nums;letter-spacing:0}
 .len[aria-current="true"]{background:var(--ink);color:#000}
 .win .ctx{margin-top:-8px}
@@ -307,12 +309,14 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
 
     <div class="view pick" id="vLen" hidden>
       <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuovo match</h2></div>
+      <p class="eyebrow qey">Nuovo match</p>
       <p class="q">A quanti punti?</p>
       <div class="lens" id="lens"><button class="len" data-len="1" type="button">1</button><button class="len" data-len="3" type="button">3</button><button class="len" data-len="5" type="button">5</button><button class="len" data-len="7" type="button">7</button></div>
     </div>
 
     <div class="view pick" id="vMode" hidden>
       <div class="top"><button class="link back" data-back="len" type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuovo match</h2></div>
+      <p class="eyebrow qey">Nuovo match</p>
       <p class="q">Chi gioca?</p>
       <button class="pill" id="pickAi" type="button">Un giocatore</button>
       <button class="pill" id="pickTwo" type="button">Due giocatori</button>
@@ -320,6 +324,7 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
 
     <div class="view pick" id="vLevel" hidden>
       <div class="top"><button class="link back" data-back="mode" type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuovo match</h2></div>
+      <p class="eyebrow qey">Nuovo match</p>
       <p class="q">Quale livello?</p>
       <button class="pill" data-level="1" type="button">Facile</button>
       <button class="pill" data-level="2" type="button">Medio</button>
