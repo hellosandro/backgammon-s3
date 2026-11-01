@@ -29,7 +29,7 @@ img{max-width:100%}
   --felt:#2F6B34; --feltDeep:#265A2B; --feltMark:rgba(0,0,0,.13);
   --orange:#F0471F; --cream:#D9DCB4;
   --marbleW:#F4F4F0; --veinW:#8D8D88; --marbleB:#19191A; --veinB:#E2E2DE;
-  --hl:#FFD43B; --hlShadow:rgba(0,0,0,.55);
+  --hl:#FFD43B; --hlShadow:rgba(0,0,0,.55); --danger:#D9412E;
   --display:"Afacad","Futura","Avenir Next",sans-serif;
   --text:"Afacad","Futura","Avenir Next",sans-serif;
 }
@@ -143,7 +143,20 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .stack .pill{width:100%;display:flex;align-items:center;justify-content:center;gap:12px}
 /* menu icons: the same thin line as close and back */
 .pill svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.pill svg .fill{fill:currentColor;stroke:none}
+.pill svg .fill,.ico svg .fill{fill:currentColor;stroke:none}
+.pill svg .solid{fill:currentColor}
+.pill.danger{background:var(--danger);color:#fff}
+/* menu: the pills in the middle; the rules and the results as round buttons, named underneath.
+   Upright they sit in a row under the pills; turned sideways each takes the middle of the empty band beside them, level with the pills */
+.card.menuCard{width:100%}
+.menuRow{display:grid;grid-template-columns:140px 140px;grid-template-areas:"s s" "l r";justify-content:center;justify-items:center;align-items:center;row-gap:22px;width:100%}
+.menuRow .stack{grid-area:s;width:280px}
+.menuRow .l{grid-area:l}.menuRow .r{grid-area:r}
+@media (orientation: landscape){.menuRow{grid-template-columns:1fr 280px 1fr;grid-template-areas:"l s r"}}
+.ico{display:flex;flex-direction:column;align-items:center;gap:10px;border:0;padding:0;min-height:0;background:none;color:var(--ink);font:500 12px/1 var(--text);letter-spacing:.26em;margin-right:-.26em}
+.ico .rnd{width:52px;height:52px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--ink);display:flex;align-items:center;justify-content:center;margin-right:.26em}
+.ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ico:active .rnd{transform:scale(.96)}
 .win .card{width:auto;max-width:90vw;overflow:visible}
 .win h1 span{white-space:nowrap}
 .win .tally{font:500 40px/1 var(--display);letter-spacing:.3em;margin:0 -.3em 0 0;font-variant-numeric:tabular-nums lining-nums}
@@ -152,7 +165,6 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
   .card{width:min(620px,100%)}
   .stack .pill{min-height:44px}
   /* the menu's four buttons in two columns, so they fit under the title without scrolling */
-  #menuStack{display:grid;grid-template-columns:1fr 1fr;width:min(560px,100%);gap:12px}
   .view{gap:14px}
   .card{position:relative}
 }
@@ -253,12 +265,14 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
         <p>Abbandonare la partita?</p><p class="sub" id="resignWho"></p>
         <div class="row"><button class="pill small" id="resignYes" type="button">Sì</button><button class="pill ghost small" id="resignNo" type="button">No</button></div>
       </div>
-      <div class="stack" id="menuStack">
-        <button class="pill" id="newGame" type="button">Nuova partita</button>
-        <button class="pill ghost" id="resign" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-16 12 12)"><path d="M6 22V3M6 3.5c3-1.5 5 1.5 8 0s4-.5 6 0v8c-2-.5-3-1.5-6 0s-5-1.5-8 0"/></g></svg>Abbandona</button>
-        <button class="pill ghost" id="openBoards" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M6 20.5 9 8l3 12.5"/><path class="fill" d="M12 20.5 15 8l3 12.5z"/></svg>Tavoli da gioco</button>
-        <button class="pill ghost" id="openResults" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13v4M8.5 20h7M10 17h4v3h-4z"/></svg>Risultati</button>
-        <button class="pill ghost" id="openRules" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle class="fill" cx="8.5" cy="8.5" r="1.2"/><circle class="fill" cx="12" cy="12" r="1.2"/><circle class="fill" cx="15.5" cy="15.5" r="1.2"/></svg>Come si gioca</button>
+      <div class="menuRow" id="menuRow">
+        <button class="ico l" id="openRules" type="button"><span class="rnd"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle class="fill" cx="8.5" cy="8.5" r="1.2"/><circle class="fill" cx="12" cy="12" r="1.2"/><circle class="fill" cx="15.5" cy="15.5" r="1.2"/></svg></span>Regole</button>
+        <div class="stack" id="menuStack">
+          <button class="pill" id="newGame" type="button">Nuova partita</button>
+          <button class="pill danger" id="resign" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20.5V5.5"/><path d="M6 5.5C8.5 3.2 11 3.8 13 5.6s4.4 2.4 6 .4v8c-1.6 2-4 1.4-6-.4S8.5 11.3 6 13.6"/></svg>Abbandona</button>
+          <button class="pill ghost" id="openBoards" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M5.5 20.5 8.75 8l3.25 12.5"/><path class="solid" d="M12 20.5 15.25 8l3.25 12.5z"/></svg>Tavoli da gioco</button>
+        </div>
+        <button class="ico r" id="openResults" type="button"><span class="rnd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13v4M8.5 20h7M10 17h4v3h-4z"/></svg></span>Risultati</button>
       </div>
     </div>
 
@@ -1092,7 +1106,7 @@ function renderSheet(){
   /* during a game the only way out is to resign; a new game is offered once there is nothing to lose */
   const on=inProgress();
   $('newGame').hidden=on;$('resign').hidden=!on;
-  $('resignAsk').hidden=true;$('menuStack').hidden=false;
+  $('resignAsk').hidden=true;$('menuRow').hidden=false;
   $('log').innerHTML=S.log.length
     ?S.log.map((t,i)=>({t,i})).reverse().map(({t,i})=>`<li><span class="n">${i+1}</span><span>${n[t.p]}</span><span class="d">${t.dice[0]}–${t.dice[1]}</span><span>${t.moves||'—'}</span></li>`).join('')
     :`<li><span class="empty">Nessuna mossa ancora.</span></li>`;
@@ -1128,6 +1142,7 @@ function showView(v){
   for(const [id,k] of [['vMenu','menu'],['vMode','mode'],['vLevel','level'],['vMoves','moves'],['vRules','rules'],['vBoards','boards'],['vResults','results']])$(id).hidden=k!==v;
   $('card').classList.toggle('wide',v==='moves'||v==='rules');
   $('card').classList.toggle('boardsCard',v==='boards'||v==='results');
+  $('card').classList.toggle('menuCard',v==='menu');
   $('card').classList.toggle('narrow',v==='mode'||v==='level');
 }
 /* where "‹" leads: the menu, or back to the end of game when the moves were opened from there */
@@ -1243,9 +1258,9 @@ $('winAgain').addEventListener('click',()=>startNew(S.mode,S.level));
 $('resign').addEventListener('click',()=>{
   const loser=S.mode==='ai'?0:S.cur;
   $('resignWho').textContent=S.mode==='ai'?'Il punto va al computer':`Il punto va al ${names()[1-loser].toLowerCase()}`;
-  $('menuStack').hidden=true;$('resignAsk').hidden=false;
+  $('menuRow').hidden=true;$('resignAsk').hidden=false;
 });
-$('resignNo').addEventListener('click',()=>{$('resignAsk').hidden=true;$('menuStack').hidden=false});
+$('resignNo').addEventListener('click',()=>{$('resignAsk').hidden=true;$('menuRow').hidden=false});
 $('resignYes').addEventListener('click',resign);
 $('winMoves').addEventListener('click',()=>{closeWin();openSheet('moves','win')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheet();closeWin()}});
