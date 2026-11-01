@@ -269,8 +269,8 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
         <button class="ico l" id="openRules" type="button"><span class="rnd"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle class="fill" cx="8.5" cy="8.5" r="1.2"/><circle class="fill" cx="12" cy="12" r="1.2"/><circle class="fill" cx="15.5" cy="15.5" r="1.2"/></svg></span>Regole</button>
         <div class="stack" id="menuStack">
           <button class="pill" id="newGame" type="button">Nuova partita</button>
-          <button class="pill danger" id="resign" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20.5V5.5"/><path d="M6 5.5C8.5 3.2 11 3.8 13 5.6s4.4 2.4 6 .4v8c-1.6 2-4 1.4-6-.4S8.5 11.3 6 13.6"/></svg>Abbandona</button>
-          <button class="pill ghost" id="openBoards" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M5.5 20.5 8.75 8l3.25 12.5"/><path class="solid" d="M12 20.5 15.25 8l3.25 12.5z"/></svg>Tavoli da gioco</button>
+          <button class="pill danger" id="resign" type="button">Abbandona</button>
+          <button class="pill ghost" id="openBoards" type="button">Tavoli da gioco</button>
         </div>
         <button class="ico r" id="openResults" type="button"><span class="rnd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13v4M8.5 20h7M10 17h4v3h-4z"/></svg></span>Risultati</button>
       </div>
@@ -1160,7 +1160,7 @@ function resign(){
 function openWin(){
   const r=S.result;if(!r)return;
   const n=names();
-  $('winTitle').innerHTML=`<span>${S.mode==='ai'?(r.kind==='resign'?'Hai abbandonato':r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`}</span>`;
+  $('winTitle').innerHTML=`<span>${S.mode==='ai'?(r.w===0?'Hai vinto':'Hai perso'):`Vince il ${n[r.w]}`}</span>`;
   $('winMoves').hidden=!S.log.length;
   const sc=tally();$('winTally').textContent=`${sc[0]}–${sc[1]}`;
   $('win').hidden=false;fitWinTitle();
