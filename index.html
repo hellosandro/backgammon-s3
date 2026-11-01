@@ -213,10 +213,11 @@ h2{font:italic 500 22px/1 var(--display);margin:0}
 .ctx{margin:12px 0 0;font-size:12px;letter-spacing:.3em;margin-right:-.3em;color:var(--muted)}
 .ask .sub{color:var(--muted);font-size:12px}
 /* match length: four round choices, the current one filled */
-.lens{display:flex;justify-content:center;gap:14px;margin:-6px 0 10px}
-.len{width:48px;height:48px;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:inset 0 0 0 1px var(--ink);font:400 19px/1 var(--display);font-variant-numeric:lining-nums;letter-spacing:0}
+.lens{display:flex;justify-content:center;gap:16px}
+/* the question of each new-match screen: readable, the size of the buttons' words */
+.pick>.q{margin:0 -.26em 8px 0;font:500 16px/1.2 var(--text);letter-spacing:.26em;text-align:center}
+.len{width:56px;height:56px;min-height:0;padding:0;border:0;border-radius:50%;box-shadow:inset 0 0 0 1px var(--ink);font:400 19px/1 var(--display);font-variant-numeric:lining-nums;letter-spacing:0}
 .len[aria-current="true"]{background:var(--ink);color:#000}
-.pick>.eyebrow{text-align:center;margin:0}
 .win .ctx{margin-top:-8px}
 /* match points, each player's in their own tray on the left */
 .scoreTxt{fill:var(--boardText,var(--cream));font-family:var(--display);font-weight:400;text-anchor:middle;dominant-baseline:central;font-variant-numeric:lining-nums;pointer-events:none}
@@ -297,16 +298,22 @@ h1{font-size:26px} h2{font-size:22px} .win h1{font-size:40px;letter-spacing:.3em
       <div class="ask" id="resetBox"></div>
     </div>
 
-    <div class="view pick" id="vMode" hidden>
-      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuova partita</h2></div>
-      <p class="eyebrow">Punti per vincere</p>
+    <div class="view pick" id="vLen" hidden>
+      <div class="top"><button class="link back" data-back type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuovo match</h2></div>
+      <p class="q">A quanti punti?</p>
       <div class="lens" id="lens"><button class="len" data-len="1" type="button">1</button><button class="len" data-len="3" type="button">3</button><button class="len" data-len="5" type="button">5</button><button class="len" data-len="7" type="button">7</button></div>
-      <button class="pill" id="pickAi" type="button">Contro il computer</button>
-      <button class="pill" id="pickTwo" type="button">In due</button>
+    </div>
+
+    <div class="view pick" id="vMode" hidden>
+      <div class="top"><button class="link back" data-back="len" type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuovo match</h2></div>
+      <p class="q">Chi gioca?</p>
+      <button class="pill" id="pickAi" type="button">Un giocatore</button>
+      <button class="pill" id="pickTwo" type="button">Due giocatori</button>
     </div>
 
     <div class="view pick" id="vLevel" hidden>
-      <div class="top"><button class="link back" data-back="mode" type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Livello</h2></div>
+      <div class="top"><button class="link back" data-back="mode" type="button" aria-label="Indietro"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5"/></svg></button><h2>Nuovo match</h2></div>
+      <p class="q">Quale livello?</p>
       <button class="pill" data-level="1" type="button">Facile</button>
       <button class="pill" data-level="2" type="button">Medio</button>
       <button class="pill" data-level="3" type="button">Difficile</button>
@@ -1131,7 +1138,7 @@ function initDrag(){
 const inProgress=()=>S.phase!=='over'&&S.phase!=='opening'&&S.phase!=='openingShow';
 function renderSheet(){
   const n=names();
-  $('menuCtx').textContent=(S.mode==='ai'?`Contro il computer · ${LEVELS[S.level]}`:'In due')+(S.match.len>1?` · a ${S.match.len}`:'');
+  $('menuCtx').textContent=(S.mode==='ai'?`Un giocatore · ${LEVELS[S.level]}`:'Due giocatori')+(S.match.len>1?` · a ${S.match.len}`:'');
   document.querySelectorAll('[data-len]').forEach(b=>b.setAttribute('aria-current',String(+b.dataset.len===MATCHLEN)));
   /* during a game the only way out is to resign; a new game is offered once there is nothing to lose */
   const on=inProgress();
@@ -1159,8 +1166,8 @@ function renderBoards(){
 }
 function renderResults(){
   const row=(l,sc)=>`<span>${l}</span><b>${sc[0]} – ${sc[1]}</b>`;
-  $('res').innerHTML=`<div class="resCol"><p class="eyebrow">Contro il computer</p>`+[1,2,3].map(l=>row(LEVELS[l],score.ai[l])).join('')+`</div>`+
-    `<div class="resCol"><p class="eyebrow">In due</p>`+row('Giocatore 1 – 2',score.two)+`</div>`;
+  $('res').innerHTML=`<div class="resCol"><p class="eyebrow">Un giocatore</p>`+[1,2,3].map(l=>row(LEVELS[l],score.ai[l])).join('')+`</div>`+
+    `<div class="resCol"><p class="eyebrow">Due giocatori</p>`+row('Giocatore 1 – 2',score.two)+`</div>`;
   $('resetBox').innerHTML=`<button class="pill ghost small" id="resetAsk" type="button">Azzera</button>`;
 }
 function askReset(){
@@ -1169,11 +1176,11 @@ function askReset(){
 function showView(v){
   if(v==='boards')renderBoards();
   if(v==='results')renderResults();
-  for(const [id,k] of [['vMenu','menu'],['vMode','mode'],['vLevel','level'],['vMoves','moves'],['vRules','rules'],['vBoards','boards'],['vResults','results']])$(id).hidden=k!==v;
+  for(const [id,k] of [['vMenu','menu'],['vLen','len'],['vMode','mode'],['vLevel','level'],['vMoves','moves'],['vRules','rules'],['vBoards','boards'],['vResults','results']])$(id).hidden=k!==v;
   $('card').classList.toggle('wide',v==='moves'||v==='rules');
   $('card').classList.toggle('boardsCard',v==='boards'||v==='results');
   $('card').classList.toggle('menuCard',v==='menu');
-  $('card').classList.toggle('narrow',v==='mode'||v==='level');
+  $('card').classList.toggle('narrow',v==='len'||v==='mode'||v==='level');
 }
 /* where "‹" leads: the menu, or back to the end of game when the moves were opened from there */
 let backTo='menu';
@@ -1283,13 +1290,13 @@ $('resetBox').addEventListener('click',e=>{
   else if(id==='resetNo')renderResults();
 });
 $('openRules').addEventListener('click',()=>showView('rules'));
-$('newGame').addEventListener('click',()=>showView('mode'));
+$('newGame').addEventListener('click',()=>showView('len'));
 $('pickAi').addEventListener('click',()=>showView('level'));
 $('pickTwo').addEventListener('click',()=>startNew('two'));
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>startNew('ai',+b.dataset.level)));
-$('winNew').addEventListener('click',()=>{closeWin();openSheet('mode','win')});
+$('winNew').addEventListener('click',()=>{closeWin();openSheet('len','win')});
 $('winAgain').addEventListener('click',nextGame);
-$('lens').addEventListener('click',e=>{const b=e.target.closest('[data-len]');if(!b)return;MATCHLEN=+b.dataset.len;try{localStorage.setItem('bgs3-match',String(MATCHLEN))}catch(e){}renderSheet()});
+$('lens').addEventListener('click',e=>{const b=e.target.closest('[data-len]');if(!b)return;MATCHLEN=+b.dataset.len;try{localStorage.setItem('bgs3-match',String(MATCHLEN))}catch(e){}renderSheet();showView('mode')});
 $('resign').addEventListener('click',()=>{
   const loser=S.mode==='ai'?0:S.cur;
   const m=S.match.len>1;
